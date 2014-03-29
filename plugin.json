@@ -1,0 +1,11 @@
+{
+    "ID":"D2D2C23B084D411DB66FE0C79D6C2A6A",
+    "ActionKeyword":"sp",
+    "Name":"Wox.Spotify",
+    "Description":"Spotify for Wox",
+    "Author":"Ioannis G. (@JohnTheGr8)",
+    "Version":"1.0.0",
+    "Language":"csharp",
+    "Website":"https://github.com/JohnTheGr8/Wox.Plugin.Spotify",
+    "ExecuteFileName":"Wox.Plugin.Spotify.dll"
+}
