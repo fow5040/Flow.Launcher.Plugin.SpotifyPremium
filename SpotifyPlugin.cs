@@ -13,8 +13,8 @@ namespace Wox.Plugin.Spotify
         public void Init(PluginInitContext context)
         {
             this._context = context;
-            
-            data = new ApiData();
+
+            data = new ApiData(_context.CurrentPluginMetadata.PluginDirecotry);
         }
 
         public List<Result> Query(Query query)
@@ -39,7 +39,7 @@ namespace Wox.Plugin.Spotify
                             Title = x.Name,
                             SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
                             Action = e => _context.ShellRun(x.Href),
-                            IcoPath = "icon.png"
+                            IcoPath = data.GetArtwork(x.Href)
                         }).ToList();
                 default:
                     if (query.ActionParameters[0] == "track")
