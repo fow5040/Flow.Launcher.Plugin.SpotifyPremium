@@ -5,8 +5,17 @@ Spotify plugin for the [Wox launcher](https://github.com/qianlifeng/Wox)
 
 ### About
 
-Search Spotify for tracks, artists, or albums and launch the results directly to your spotify client.
+Search Spotify for tracks, artists, or albums and launch the results directly to your Spotify client.
 
-## To Do
+### Usage
 
-- Load artist/album thumbnails
+Search for tracks: `` sp {track title, artist name, or album} ``
+
+Search for an artist: `` sp artist {artist name} ``
+
+Search for an album: `` sp album {album name} ``
+
+## To Do - Ideas
+
+- User Configuration (#1)
+- Clear Cache folder
