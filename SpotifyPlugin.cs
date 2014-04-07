@@ -54,7 +54,7 @@ namespace Wox.Plugin.Spotify
                     return data.GetTracks(param).Tracks.ToList().GetRange(0, 20).Select(x => new Result()
                         {
                             Title = x.Name,
-                            SubTitle = "Album: " + x.Album.Name,
+                            SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
                             // When selected, open it with the spotify client
                             Action = e => _context.ShellRun(x.Href),
                             IcoPath = "icon.png"
