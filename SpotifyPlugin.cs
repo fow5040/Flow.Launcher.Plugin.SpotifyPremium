@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Wox.Plugin.Spotify.MetadataApi;
 
@@ -21,6 +22,7 @@ namespace Wox.Plugin.Spotify
         public List<Result> Query(Query query)
         {
             var param = query.GetAllRemainingParameter();
+            var Results = new List<Result>();
 
             // check if this is an album or artist search, default to track search
             switch (query.ActionParameters[0])
@@ -28,7 +30,7 @@ namespace Wox.Plugin.Spotify
                 case "artist":
                     param = param.Substring("artist ".Length);
                     // Retrieve data and return the first 10 results
-                    return data.GetArtists(param).Artists.ToList().GetRange(0, 10).Select(x => new Result()
+                    Results = data.GetArtists(param).Artists.ToList().GetRangeSafe(0, 10).Select(x => new Result()
                         {
                             Title = x.Name,
                             SubTitle = string.Format("Popularity: {0}%", System.Convert.ToDouble(x.Popularity)*100 ),
@@ -36,10 +38,11 @@ namespace Wox.Plugin.Spotify
                             Action = e => _context.ShellRun(x.Href),
                             IcoPath = "icon.png"
                         }).ToList();
+                    break;
                 case "album":
                     param = param.Substring("album ".Length);
                     // Retrieve data and return the first 10 results
-                    return data.GetAlbums(param).Albums.ToList().GetRange(0, 10).Select(x => new Result()
+                    Results = data.GetAlbums(param).Albums.ToList().GetRangeSafe(0, 10).Select(x => new Result()
                         {
                             Title = x.Name,
                             SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
@@ -47,11 +50,12 @@ namespace Wox.Plugin.Spotify
                             Action = e => _context.ShellRun(x.Href),
                             IcoPath = data.GetArtwork(x.Href)
                         }).ToList();
+                    break;
                 default:
                     if (query.ActionParameters[0] == "track")
                         param = param.Substring("track ".Length);
                     // Retrieve data and return the first 20 results
-                    return data.GetTracks(param).Tracks.ToList().GetRange(0, 20).Select(x => new Result()
+                    Results = data.GetTracks(param).Tracks.ToList().GetRangeSafe(0, 20).Select(x => new Result()
                         {
                             Title = x.Name,
                             SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
@@ -59,7 +63,41 @@ namespace Wox.Plugin.Spotify
                             Action = e => _context.ShellRun(x.Href),
                             IcoPath = "icon.png"
                         }).ToList();
+                    break;
             }
+            if (Results.Count > 0)
+                return Results;
+            else
+                return new List<Result>()
+                    {
+                        new Result() { Title = "No results found on Spotify.", IcoPath = "icon.png" }
+                    };
+        }        
+    }
+
+    public static class Extensions
+    {
+        /// <summary>
+        /// Returns a range of elements in the source List, limiting the number of 
+        /// results to the specified maximum and starting from the specified index.
+        /// </summary>
+        public static List<T> GetRangeSafe<T> (this List<T> source, int index, int maxCount)
+        {
+            // Index cannot be negative
+            if (index < 0)
+                throw new ArgumentOutOfRangeException("index");
+
+            // if index, count are not out of bounds, use GetRange
+            if (source.Count - index >= maxCount)
+                return source.GetRange(index, maxCount);
+            
+            // if count is greater than the number of items after the specified position (index),
+            //  return a list of all items after that position.
+            if (source.Count - index >= 0)
+                return source.GetRange(index, source.Count - index);
+            
+            // In any other case, return an empty list
+            return new List<T>();
         }
     }
 }
