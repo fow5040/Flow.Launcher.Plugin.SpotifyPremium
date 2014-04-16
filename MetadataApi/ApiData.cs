@@ -22,7 +22,7 @@ namespace Wox.Plugin.Spotify.MetadataApi
             this.PluginDirecotry = pluginDir ?? Directory.GetCurrentDirectory();
 
             // Create the cache folder, if it doesn't already exist
-            if (Directory.Exists(CacheFodler))
+            if (!Directory.Exists(CacheFodler))
                 Directory.CreateDirectory(CacheFodler);
         }
 
