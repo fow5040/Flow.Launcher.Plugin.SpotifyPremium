@@ -4,7 +4,7 @@
     "Name":"Wox.Spotify",
     "Description":"Spotify for Wox",
     "Author":"Ioannis G. (@JohnTheGr8)",
-    "Version":"1.0.0",
+    "Version":"1.0.1",
     "Language":"csharp",
     "Website":"https://github.com/JohnTheGr8/Wox.Plugin.Spotify",
     "ExecuteFileName":"Wox.Plugin.Spotify.dll"
