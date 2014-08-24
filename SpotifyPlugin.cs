@@ -16,7 +16,7 @@ namespace Wox.Plugin.Spotify
             this._context = context;
 
             // initialize data, passing it the plugin directory
-            data = new ApiData(_context.CurrentPluginMetadata.PluginDirecotry);
+            data = new ApiData(_context.CurrentPluginMetadata.PluginDirectory);
         }
 
         public List<Result> Query(Query query)
@@ -35,7 +35,7 @@ namespace Wox.Plugin.Spotify
                             Title = x.Name,
                             SubTitle = string.Format("Popularity: {0}%", System.Convert.ToDouble(x.Popularity)*100 ),
                             // When selected, open it with the spotify client
-                            Action = e => _context.ShellRun(x.Href),
+                            Action = e => _context.API.ShellRun(x.Href),
                             IcoPath = "icon.png"
                         }).ToList();
                     break;
@@ -47,7 +47,7 @@ namespace Wox.Plugin.Spotify
                             Title = x.Name,
                             SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
                             // When selected, open it with the spotify client
-                            Action = e => _context.ShellRun(x.Href),
+                            Action = e => _context.API.ShellRun(x.Href),
                             IcoPath = data.GetArtwork(x.Href)
                         }).ToList();
                     break;
@@ -60,7 +60,7 @@ namespace Wox.Plugin.Spotify
                             Title = x.Name,
                             SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
                             // When selected, open it with the spotify client
-                            Action = e => _context.ShellRun(x.Href),
+                            Action = e => _context.API.ShellRun(x.Href),
                             IcoPath = "icon.png"
                         }).ToList();
                     break;
