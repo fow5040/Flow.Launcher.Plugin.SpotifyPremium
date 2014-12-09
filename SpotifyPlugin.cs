@@ -24,6 +24,10 @@ namespace Wox.Plugin.Spotify
             var param = query.GetAllRemainingParameter();
             var Results = new List<Result>();
 
+            // Avoid exceptions when no parameters are passed
+            if (query.ActionParameters.Count == 0 || (new[] { "artist", "album", "track" }.Contains(query.ActionParameters[0]) && query.ActionParameters.Count == 1))
+                return Results;
+
             // check if this is an album or artist search, default to track search
             switch (query.ActionParameters[0])
             {
