@@ -11,11 +11,20 @@ Search Spotify for tracks, artists, or albums and launch the results directly to
 
 ### Usage
 
+Show currently playing track: `` sp ``
+
 Search for tracks: `` sp {track title, artist name, or album} ``
 
 Search for an artist: `` sp artist {artist name} ``
 
 Search for an album: `` sp album {album name} ``
+
+Play next track: `` sp next ``
+
+Play: `` sp play ``
+
+Pause: `` sp pause ``
+
 
 ## To Do - Ideas
 
