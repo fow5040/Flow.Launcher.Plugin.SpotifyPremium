@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using Wox.Plugin.Spotify.MetadataApi;
+using System.Threading.Tasks;
+using SpotifyAPI.Web.Models;
 
 namespace Wox.Plugin.Spotify
 {
@@ -9,99 +11,231 @@ namespace Wox.Plugin.Spotify
     {
         private PluginInitContext _context;
 
-        private ApiData data;
+        private ISpotifyApi _api = new DummySpotifyApi();
+
+        private readonly Dictionary<string, Func<string, List<Result>>> _terms = new Dictionary<string, Func<string, List<Result>>>();
+
+        private const string SpotifyIcon = "icon.png";
 
         public void Init(PluginInitContext context)
         {
-            this._context = context;
+            _context = context;
 
             // initialize data, passing it the plugin directory
-            data = new ApiData(_context.CurrentPluginMetadata.PluginDirectory);
+            Task.Run(() =>
+            {
+                _api = new SpotifyApi(_context.CurrentPluginMetadata.PluginDirectory);
+            });
+
+            _terms.Add("artist", SearchArtist);
+            _terms.Add("album", SearchAlbum);
+            _terms.Add("track", SearchTrack);
+            _terms.Add("next", PlayNext);
+            _terms.Add("pause", Pause);
+            _terms.Add("play", Play);
+        }
+
+        private List<Result> Play(string arg)
+        {
+            return new List<Result>()
+            {
+                new Result()
+                {
+                    IcoPath = SpotifyIcon,
+                    Title = "Play",
+                    SubTitle = _api.CurrentTrack.TrackResource.Name,
+                    Action = context =>
+                    {
+                        _api.Play();
+                        return true;
+                    }
+                }
+            };
+        }
+
+        private List<Result> Pause(string arg)
+        {
+            return new List<Result>()
+            {
+                new Result()
+                {
+                    IcoPath = SpotifyIcon,
+                    Title = "Pause",
+                    SubTitle = _api.CurrentTrack.TrackResource.Name,
+                    Action = context =>
+                    {
+                        _api.Pause();
+                        return true;
+                    }
+                }
+            };
+        }
+
+        private List<Result> PlayNext(string arg)
+        {
+            return new List<Result>()
+            {
+                new Result()
+                {
+                    IcoPath = SpotifyIcon,
+                    Title = "Next",
+                    SubTitle = _api.CurrentTrack.TrackResource.Name,
+                    Action = context =>
+                    {
+                        _api.Skip();
+                        return true;
+                    }
+                }
+            };
+        }
+
+        private List<Result> GetPlaying()
+        {
+
+            var t = _api.CurrentTrack;
+            if (t == null)
+            {
+                return new List<Result>()
+                {
+                    new Result()
+                    {
+                        Action = context => true,
+                        Title = "No track playing",
+                        IcoPath = SpotifyIcon
+                    }
+                };
+            }
+
+            return new List<Result>()
+            {
+                new Result()
+                {
+                    Title = t.TrackResource.Name,
+                    SubTitle = t.ArtistResource.Name,
+                    IcoPath = _api.GetArtwork(t),
+                    Action = context => true
+                }
+            };
         }
 
         public List<Result> Query(Query query)
         {
-            var param = query.GetAllRemainingParameter();
-            var Results = new List<Result>();
-
-            // Avoid exceptions when no parameters are passed
-            if (query.ActionParameters.Count == 0 || (new[] { "artist", "album", "track" }.Contains(query.ActionParameters[0]) && query.ActionParameters.Count == 1))
-                return Results;
-
-            // check if this is an album or artist search, default to track search
-            switch (query.ActionParameters[0])
+            try
             {
-                case "artist":
-                    param = param.Substring("artist ".Length);
-                    // Retrieve data and return the first 10 results
-                    Results = data.GetArtists(param).Artists.ToList().GetRangeSafe(0, 10).Select(x => new Result()
-                        {
-                            Title = x.Name,
-                            SubTitle = string.Format("Popularity: {0}%", System.Convert.ToDouble(x.Popularity)*100 ),
-                            // When selected, open it with the spotify client
-                            Action = e => _context.API.ShellRun(x.Href),
-                            IcoPath = "icon.png"
-                        }).ToList();
-                    break;
-                case "album":
-                    param = param.Substring("album ".Length);
-                    // Retrieve data and return the first 10 results
-                    Results = data.GetAlbums(param).Albums.ToList().GetRangeSafe(0, 10).Select(x => new Result()
-                        {
-                            Title = x.Name,
-                            SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
-                            // When selected, open it with the spotify client
-                            Action = e => _context.API.ShellRun(x.Href),
-                            IcoPath = data.GetArtwork(x.Href)
-                        }).ToList();
-                    break;
-                default:
-                    if (query.ActionParameters[0] == "track")
-                        param = param.Substring("track ".Length);
-                    // Retrieve data and return the first 20 results
-                    Results = data.GetTracks(param).Tracks.ToList().GetRangeSafe(0, 20).Select(x => new Result()
-                        {
-                            Title = x.Name,
-                            SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name).ToArray()),
-                            // When selected, open it with the spotify client
-                            Action = e => _context.API.ShellRun(x.Href),
-                            IcoPath = "icon.png"
-                        }).ToList();
-                    break;
+                var param = query.Search;
+                var queryTerms = query.ActionParameters;//v1.3.0, uncomment this: //.Skip(1).ToList();
+
+                // display status if no parameters are added
+                if (queryTerms.Count == 0)
+                {
+                    return GetPlaying();
+                }
+
+                if (_terms.ContainsKey(queryTerms[0]))
+                {
+                    var results = _terms[queryTerms[0]].Invoke(param);
+                    return results;
+                }
+
+                return SearchTrack(param);
             }
-            if (Results.Count > 0)
-                return Results;
-            else
-                return new List<Result>()
-                    {
-                        new Result() { Title = "No results found on Spotify.", IcoPath = "icon.png" }
-                    };
-        }        
-    }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            return new List<Result>()
+            {
+                new Result { Title = "No results found on Spotify.", IcoPath = SpotifyIcon, Action = context => false }
+            };
+        }
 
-    public static class Extensions
-    {
-        /// <summary>
-        /// Returns a range of elements in the source List, limiting the number of 
-        /// results to the specified maximum and starting from the specified index.
-        /// </summary>
-        public static List<T> GetRangeSafe<T> (this List<T> source, int index, int maxCount)
+        private List<Result> SearchTrack(string param)
         {
-            // Index cannot be negative
-            if (index < 0)
-                throw new ArgumentOutOfRangeException("index");
+            //if (string.Equals(param, "track", StringComparison.InvariantCultureIgnoreCase))
+            if(param.StartsWith("track ", StringComparison.InvariantCultureIgnoreCase))
+            {
+                param = param.Substring("track ".Length);
+            }
 
-            // if index, count are not out of bounds, use GetRange
-            if (source.Count - index >= maxCount)
-                return source.GetRange(index, maxCount);
-            
-            // if count is greater than the number of items after the specified position (index),
-            //  return a list of all items after that position.
-            if (source.Count - index >= 0)
-                return source.GetRange(index, source.Count - index);
-            
-            // In any other case, return an empty list
-            return new List<T>();
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                return new List<Result>();
+            }
+
+            // Retrieve data and return the first 20 results
+            var fullTracks = _api.GetTracks(param);
+            var results = new List<Result>();
+            foreach (var x in fullTracks)
+            {
+                var artists = x.Artists.Select(a => a.Name);
+                var result = new Result
+                {
+                    SubTitle = "Artist: " + string.Join(", ", artists),
+                    Title = x.Name,
+                    IcoPath = _api.GetArtwork(x),
+                    Action = context => Play(x)
+                };
+                results.Add(result);
+            }
+            return results;
+        }
+
+        private List<Result> SearchAlbum(string param)
+        {
+             param = param.Substring("album".Length);
+
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                return new List<Result>();
+            }
+
+            // Retrieve data and return the first 10 results
+            var result = _api.GetAlbums(param).Select(x => new Result()
+            {
+                Title = x.Name,
+                Action = e => Play(x),
+                IcoPath = _api.GetArtwork(x)
+            }).ToList();
+            return result;
+        }
+
+        private List<Result> SearchArtist(string param)
+        {
+             param = param.Substring("artist".Length);
+
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                return new List<Result>();
+            }
+
+            // Retrieve data and return the first 10 results
+            var results = _api.GetArtists(param).Select(x => new Result()
+            {
+                Title = x.Name,
+                SubTitle = $"Popularity: {x.Popularity}%",
+                // When selected, open it with the spotify client
+                Action = e => Play(x),
+                IcoPath = _api.GetArtwork(x)
+            }).ToList();
+            return results;
+        }
+
+        private bool Play(FullTrack fullTrack)
+        {
+            _api.Play(fullTrack);
+            return true;
+        }
+
+        private bool Play(SimpleAlbum album)
+        {
+            _api.Play(album);
+            return true;
+        }
+
+        private bool Play(FullArtist artist)
+        {
+            Process.Start(artist.Uri);
+            return true;
         }
     }
 }
