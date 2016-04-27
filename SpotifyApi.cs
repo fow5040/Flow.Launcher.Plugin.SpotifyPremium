@@ -72,6 +72,18 @@ namespace Wox.Plugin.Spotify
             _localSpotify.Skip();
         }
 
+        public void ToggleMute()
+        {
+            if (_localSpotify.IsSpotifyMuted())
+            {
+                _localSpotify.UnMute();
+            }
+            else
+            {
+                _localSpotify.Mute();
+            }
+        }
+
         public IEnumerable<FullArtist> GetArtists(string s)
         {
             lock (_lock)

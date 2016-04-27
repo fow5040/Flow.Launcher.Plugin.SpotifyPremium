@@ -35,6 +35,7 @@ namespace Wox.Plugin.Spotify
             _terms.Add("next", PlayNext);
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
+            _terms.Add("mute", ToggleMute);
         }
 
         private List<Result> Play(string arg)
@@ -116,6 +117,24 @@ namespace Wox.Plugin.Spotify
                     SubTitle = t.ArtistResource.Name,
                     IcoPath = _api.GetArtwork(t),
                     Action = context => true
+                }
+            };
+        }
+
+        private List<Result> ToggleMute(string arg)
+        {
+            return new List<Result>
+            {
+                new Result()
+                {
+                    Title = "Mute",
+                    SubTitle = "mute or unmute Spotify",
+                    IcoPath = SpotifyIcon,
+                    Action = context =>
+                    {
+                        _api.ToggleMute();
+                        return true;
+                    }
                 }
             };
         }
