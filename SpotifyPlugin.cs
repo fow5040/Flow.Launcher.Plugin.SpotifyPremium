@@ -151,22 +151,19 @@ namespace Wox.Plugin.Spotify
 
             try
             {
-                var param = query.Search;
-                var queryTerms = query.ActionParameters;//v1.3.0, uncomment this: //.Skip(1).ToList();
-
                 // display status if no parameters are added
-                if (queryTerms.Count == 0)
+                if (string.IsNullOrWhiteSpace(query.Search))
                 {
                     return GetPlaying();
                 }
 
-                if (_terms.ContainsKey(queryTerms[0]))
+                if (_terms.ContainsKey(query.FirstSearch))
                 {
-                    var results = _terms[queryTerms[0]].Invoke(param);
+                    var results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
                     return results;
                 }
 
-                return SearchTrack(param);
+                return SearchTrack(query.Search);
             }
             catch (Exception e)
             {
@@ -180,12 +177,6 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchTrack(string param)
         {
-            //if (string.Equals(param, "track", StringComparison.InvariantCultureIgnoreCase))
-            if(param.StartsWith("track ", StringComparison.InvariantCultureIgnoreCase))
-            {
-                param = param.Substring("track ".Length);
-            }
-
             if (string.IsNullOrWhiteSpace(param))
             {
                 return new List<Result>();
@@ -211,8 +202,6 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchAlbum(string param)
         {
-             param = param.Substring("album".Length);
-
             if (string.IsNullOrWhiteSpace(param))
             {
                 return new List<Result>();
@@ -230,8 +219,6 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchArtist(string param)
         {
-             param = param.Substring("artist".Length);
-
             if (string.IsNullOrWhiteSpace(param))
             {
                 return new List<Result>();
