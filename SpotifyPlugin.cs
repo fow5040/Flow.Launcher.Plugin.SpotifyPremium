@@ -11,11 +11,12 @@ namespace Wox.Plugin.Spotify
     {
         private PluginInitContext _context;
 
-        private ISpotifyApi _api = new DummySpotifyApi();
+        private SpotifyApi _api;
 
         private readonly Dictionary<string, Func<string, List<Result>>> _terms = new Dictionary<string, Func<string, List<Result>>>();
 
         private const string SpotifyIcon = "icon.png";
+        private bool _isReady;
 
         public void Init(PluginInitContext context)
         {
@@ -25,6 +26,7 @@ namespace Wox.Plugin.Spotify
             Task.Run(() =>
             {
                 _api = new SpotifyApi(_context.CurrentPluginMetadata.PluginDirectory);
+                _isReady = true;
             });
 
             _terms.Add("artist", SearchArtist);
@@ -120,6 +122,14 @@ namespace Wox.Plugin.Spotify
 
         public List<Result> Query(Query query)
         {
+            if (!_isReady)
+            {
+                return new List<Result>
+                {
+                    new Result("Spotify plugin is initializing", SpotifyIcon, "please try again soon...")
+                };
+            }
+
             try
             {
                 var param = query.Search;

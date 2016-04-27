@@ -49,8 +49,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DummySpotifyApi.cs" />
-    <Compile Include="ISpotifyApi.cs" />
     <Compile Include="SpotifyApi.cs" />
     <Compile Include="SpotifyPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

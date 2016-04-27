@@ -12,7 +12,7 @@ using SpotifyAPI.Web.Models;
 
 namespace Wox.Plugin.Spotify
 {
-    public class SpotifyApi : ISpotifyApi
+    public class SpotifyApi
     {
         private readonly SpotifyLocalAPI _localSpotify;
         private readonly SpotifyWebAPI _spotifyApi;
