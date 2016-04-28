@@ -110,6 +110,8 @@ namespace Wox.Plugin.Spotify
             }
 
             var status = _api.IsPlaying ? "Now Playing" : "Paused";
+            var icon = _api.GetArtworkAsync(t);
+            icon.Wait();
 
             return new List<Result>()
             {
@@ -117,8 +119,7 @@ namespace Wox.Plugin.Spotify
                 {
                     Title = t.TrackResource.Name,
                     SubTitle = $"{status} | by {t.ArtistResource.Name}",
-                    IcoPath = _api.GetArtwork(t),
-                    Action = context => true
+                    IcoPath = icon.Result
                 }
             };
         }
@@ -187,25 +188,20 @@ namespace Wox.Plugin.Spotify
             }
 
             // Retrieve data and return the first 20 results
-            var fullTracks = _api.GetTracks(param);
-            var results = new List<Result>();
-            foreach (var x in fullTracks)
+            var results = _api.GetTracks(param).Select(async x => new Result()
             {
-                var artists = x.Artists.Select(a => a.Name);
-                var result = new Result
+                Title = x.Name,
+                SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                IcoPath = await _api.GetArtworkAsync(x),
+                Action = _ =>
                 {
-                    SubTitle = "Artist: " + string.Join(", ", artists),
-                    Title = x.Name,
-                    IcoPath = _api.GetArtwork(x),
-                    Action = _ =>
-                    {
-                        _api.Play(x.Uri);
-                        return true;
-                    }
-                };
-                results.Add(result);
-            }
-            return results;
+                    _api.Play(x.Uri);
+                    return true;
+                }
+            }).ToArray();
+
+            Task.WaitAll(results);
+            return results.Select(x => x.Result).ToList();
         }
 
         private List<Result> SearchAlbum(string param)
@@ -216,17 +212,19 @@ namespace Wox.Plugin.Spotify
             }
 
             // Retrieve data and return the first 10 results
-            var result = _api.GetAlbums(param).Select(x => new Result()
+            var results = _api.GetAlbums(param).Select(async x => new Result()
             {
                 Title = x.Name,
-                IcoPath = _api.GetArtwork(x),
+                IcoPath = await _api.GetArtworkAsync(x),
                 Action = _ =>
                 {
                     _api.Play(x.Uri);
                     return true;
                 }                
-            }).ToList();
-            return result;
+            }).ToArray();
+
+            Task.WaitAll(results);
+            return results.Select(x => x.Result).ToList();
         }
 
         private List<Result> SearchArtist(string param)
@@ -237,19 +235,21 @@ namespace Wox.Plugin.Spotify
             }
 
             // Retrieve data and return the first 10 results
-            var results = _api.GetArtists(param).Select(x => new Result()
+            var results = _api.GetArtists(param).Select(async x => new Result()
             {
                 Title = x.Name,
                 SubTitle = $"Popularity: {x.Popularity}%",
-                IcoPath = _api.GetArtwork(x),
+                IcoPath = await _api.GetArtworkAsync(x),
                 // When selected, open it with the spotify client
                 Action = _ =>
                 {
                     _api.Play(x.Uri);
                     return true;
                 }
-            }).ToList();
-            return results;
+            }).ToArray();
+
+            Task.WaitAll(results);
+            return results.Select(x => x.Result).ToList();
         }
     }
 }

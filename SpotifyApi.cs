@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using SpotifyAPI.Local;
 using SpotifyAPI.Local.Enums;
 using SpotifyAPI.Local.Models;
@@ -112,43 +113,36 @@ namespace Wox.Plugin.Spotify
             }
         }
 
-        public string GetArtwork(SimpleAlbum album)
-        {
-            if (!album.Images.Any())
-                return null;
+        public Task<string> GetArtworkAsync(SimpleAlbum album) => GetArtworkAsync(album.Images, album.Uri);
 
-            var url = album.Images[0].Url;
+        public Task<string> GetArtworkAsync(FullArtist artist) => GetArtworkAsync(artist.Images, artist.Uri);
 
-            // use the unique spotify ID as the local file name
-            var uniqueId = GetUniqueIdForArtwork(album.Uri);
+        public Task<string> GetArtworkAsync(FullTrack track) => GetArtworkAsync(track.Album);
 
-            return DownloadImage(uniqueId, url);
-        }
-
-        public string GetArtwork(FullArtist artist)
-        {
-            if (!artist.Images.Any())
-                return null;
-
-            var url = artist.Images[0].Url;
-
-            // use the unique spotify ID as the local file name
-            var uniqueId = GetUniqueIdForArtwork(artist.Uri);
-
-            return DownloadImage(uniqueId, url);
-        }
-
-        public string GetArtwork(FullTrack track) => GetArtwork(track.Album);
-
-        public string GetArtwork(Track track)
+        public Task<string> GetArtworkAsync(Track track)
         {
             var albumArtUrl = track.GetAlbumArtUrl(AlbumArtSize.Size160);
-            var uniqueId = GetUniqueIdForArtwork(track.TrackResource.Uri);
-            
-            return DownloadImage(uniqueId, albumArtUrl);
+
+            return GetArtworkAsync(albumArtUrl, track.TrackResource.Uri);
         }
 
+        private Task<string> GetArtworkAsync(List<Image> images, string uri)
+        {
+            if (!images.Any())
+                return null;
 
+            var url = images.Last().Url;
+
+            return GetArtworkAsync(url, uri);
+        }
+
+        private async Task<string> GetArtworkAsync(string url, string resourceUri)
+        {
+            // use the unique spotify ID as the local file name
+            var uniqueId = GetUniqueIdForArtwork(resourceUri);
+
+            return await DownloadImageAsync(uniqueId, url);
+        }
 
         private static string GetUniqueIdForArtwork(string uri) => uri.Substring(uri.LastIndexOf(":", StringComparison.Ordinal) + 1);
 
@@ -182,7 +176,7 @@ namespace Wox.Plugin.Spotify
             }
         }
         
-        private string DownloadImage(string uniqueId, string url)
+        private async Task<string> DownloadImageAsync(string uniqueId, string url)
         {
             // local path to the image file, located in the Cache folder
             var path = $@"{CacheFolder}\{uniqueId}.jpg";
@@ -194,8 +188,9 @@ namespace Wox.Plugin.Spotify
 
             using (var wc = new WebClient())
             {
-                wc.DownloadFile(new Uri(url), path);
+                await wc.DownloadFileTaskAsync(new Uri(url), path);
             }
+
             return path;
         }
     }
