@@ -215,6 +215,7 @@ namespace Wox.Plugin.Spotify
             var results = _api.GetAlbums(param).Select(async x => new Result()
             {
                 Title = x.Name,
+                SubTitle = "by " + string.Join(", ", x.Artists.Select(a => a.Name)),
                 IcoPath = await _api.GetArtworkAsync(x),
                 Action = _ =>
                 {

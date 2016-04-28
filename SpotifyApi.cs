@@ -93,13 +93,15 @@ namespace Wox.Plugin.Spotify
             }
         }
 
-        public IEnumerable<SimpleAlbum> GetAlbums(string s)
+        public IEnumerable<FullAlbum> GetAlbums(string s)
         {
             lock (_lock)
             {
                 var searchItems = _spotifyApi.SearchItems(s, SearchType.Album, 10);
 
-                return searchItems.Albums.Items;
+                var results = _spotifyApi.GetSeveralAlbums(searchItems.Albums.Items.Select(a => a.Id).ToList());
+
+                return results.Albums;
             }
         }
 
@@ -114,6 +116,8 @@ namespace Wox.Plugin.Spotify
         }
 
         public Task<string> GetArtworkAsync(SimpleAlbum album) => GetArtworkAsync(album.Images, album.Uri);
+
+        public Task<string> GetArtworkAsync(FullAlbum album) => GetArtworkAsync(album.Images, album.Uri);
 
         public Task<string> GetArtworkAsync(FullArtist artist) => GetArtworkAsync(artist.Images, artist.Uri);
 
