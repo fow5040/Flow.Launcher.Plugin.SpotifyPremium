@@ -56,7 +56,7 @@ namespace Wox.Plugin.Spotify
             };
         }
 
-        private List<Result> Pause(string arg)
+        private List<Result> Pause(string arg = null)
         {
             return new List<Result>()
             {
@@ -110,6 +110,7 @@ namespace Wox.Plugin.Spotify
             }
 
             var status = _api.IsPlaying ? "Now Playing" : "Paused";
+            var toggleAction = _api.IsPlaying ? "Pause" : "Resume";
             var icon = _api.GetArtworkAsync(t);
             icon.Wait();
 
@@ -120,20 +121,46 @@ namespace Wox.Plugin.Spotify
                     Title = t.TrackResource.Name,
                     SubTitle = $"{status} | by {t.ArtistResource.Name}",
                     IcoPath = icon.Result
-                }
+                },
+                new Result()
+                {
+                    IcoPath = SpotifyIcon,
+                    Title = "Pause / Resume",
+                    SubTitle = $"{toggleAction}: {t.TrackResource.Name}",
+                    Action = _ =>
+                    {
+                        if (_api.IsPlaying)
+                            _api.Pause();
+                        else
+                            _api.Play();
+                        return true;
+                    }
+                },
+                new Result()
+                {
+                    IcoPath = SpotifyIcon,
+                    Title = "Next",
+                    SubTitle = $"Skip: {t.TrackResource.Name}",
+                    Action = context =>
+                    {
+                        _api.Skip();
+                        return true;
+                    }
+                },
+                ToggleMute().First()
             };
         }
 
-        private List<Result> ToggleMute(string arg)
+        private List<Result> ToggleMute(string arg = null)
         {
-            var toggleAction = _api.IsMuted ? "unmute" : "mute";
+            var toggleAction = _api.IsMuted ? "Unmute" : "Mute";
 
             return new List<Result>
             {
                 new Result()
                 {
                     Title = "Toggle Mute",
-                    SubTitle = $"Select to {toggleAction} Spotify",
+                    SubTitle = $"{toggleAction}: {_api.CurrentTrack.TrackResource.Name}",
                     IcoPath = SpotifyIcon,
                     Action = context =>
                     {
