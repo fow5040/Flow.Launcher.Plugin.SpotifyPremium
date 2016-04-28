@@ -22,14 +22,15 @@ namespace Wox.Plugin.Spotify
         public SpotifyApi(string pluginDir = null)
         {
             var pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
-            CacheFodler = Path.Combine(pluginDirectory, "Cache");
+            CacheFolder = Path.Combine(pluginDirectory, "Cache");
 
             // Create the cache folder, if it doesn't already exist
-            if (!Directory.Exists(CacheFodler))
-                Directory.CreateDirectory(CacheFodler);
+            if (!Directory.Exists(CacheFolder))
+                Directory.CreateDirectory(CacheFolder);
 
             _localSpotify = new SpotifyLocalAPI();
-            _localSpotify.OnTrackChange += LocalSpotifyOnTrackChange;
+            _localSpotify.OnTrackChange += (o, e) => CurrentTrack = e.NewTrack;
+            _localSpotify.OnPlayStateChange += (o, e) => IsPlaying = e.Playing;
             ConnectToSpotify();
 
             _spotifyApi = new SpotifyWebAPI
@@ -41,9 +42,11 @@ namespace Wox.Plugin.Spotify
         
         public bool IsPlaying { get; set; }
 
-        private string CacheFodler { get; }
+        public bool IsMuted => _localSpotify.IsSpotifyMuted();
 
         public Track CurrentTrack { get; private set; }
+
+        private string CacheFolder { get; }
 
 
 
@@ -52,14 +55,9 @@ namespace Wox.Plugin.Spotify
             _localSpotify.Play();
         }
 
-        public void Play(FullTrack track)
+        public void Play(string uri)
         {
-            _localSpotify.PlayURL(track.Uri);
-        }
-
-        public void Play(SimpleAlbum album)
-        {
-            _localSpotify.PlayURL(album.Uri);
+            _localSpotify.PlayURL(uri);
         }
 
         public void Pause()
@@ -179,19 +177,15 @@ namespace Wox.Plugin.Spotify
 
             if (status?.Track != null) //Update track infos
             {
-                UpdateTrack(status.Track);
+                CurrentTrack = status.Track;
+                IsPlaying = status.Playing;
             }
-        }
-
-        private void UpdateTrack(Track track)
-        {
-            CurrentTrack = track;
         }
         
         private string DownloadImage(string uniqueId, string url)
         {
             // local path to the image file, located in the Cache folder
-            var path = $@"{CacheFodler}\{uniqueId}.jpg";
+            var path = $@"{CacheFolder}\{uniqueId}.jpg";
 
             if (File.Exists(path))
             {
@@ -203,11 +197,6 @@ namespace Wox.Plugin.Spotify
                 wc.DownloadFile(new Uri(url), path);
             }
             return path;
-        }
-
-        private void LocalSpotifyOnTrackChange(object sender, TrackChangeEventArgs e)
-        {
-            UpdateTrack(e.NewTrack);
         }
     }
 }

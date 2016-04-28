@@ -46,7 +46,7 @@ namespace Wox.Plugin.Spotify
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Play",
-                    SubTitle = _api.CurrentTrack.TrackResource.Name,
+                    SubTitle = $"Resume: {_api.CurrentTrack.TrackResource.Name}",
                     Action = context =>
                     {
                         _api.Play();
@@ -64,7 +64,7 @@ namespace Wox.Plugin.Spotify
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Pause",
-                    SubTitle = _api.CurrentTrack.TrackResource.Name,
+                    SubTitle = $"Pause: {_api.CurrentTrack.TrackResource.Name}",
                     Action = context =>
                     {
                         _api.Pause();
@@ -82,7 +82,7 @@ namespace Wox.Plugin.Spotify
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Next",
-                    SubTitle = _api.CurrentTrack.TrackResource.Name,
+                    SubTitle = $"Skip: {_api.CurrentTrack.TrackResource.Name}",
                     Action = context =>
                     {
                         _api.Skip();
@@ -94,8 +94,8 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> GetPlaying()
         {
-
             var t = _api.CurrentTrack;
+
             if (t == null)
             {
                 return new List<Result>()
@@ -109,12 +109,14 @@ namespace Wox.Plugin.Spotify
                 };
             }
 
+            var status = _api.IsPlaying ? "Now Playing" : "Paused";
+
             return new List<Result>()
             {
                 new Result()
                 {
                     Title = t.TrackResource.Name,
-                    SubTitle = t.ArtistResource.Name,
+                    SubTitle = $"{status} | by {t.ArtistResource.Name}",
                     IcoPath = _api.GetArtwork(t),
                     Action = context => true
                 }
@@ -123,12 +125,14 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> ToggleMute(string arg)
         {
+            var toggleAction = _api.IsMuted ? "unmute" : "mute";
+
             return new List<Result>
             {
                 new Result()
                 {
-                    Title = "Mute",
-                    SubTitle = "mute or unmute Spotify",
+                    Title = "Toggle Mute",
+                    SubTitle = $"Select to {toggleAction} Spotify",
                     IcoPath = SpotifyIcon,
                     Action = context =>
                     {
@@ -193,7 +197,11 @@ namespace Wox.Plugin.Spotify
                     SubTitle = "Artist: " + string.Join(", ", artists),
                     Title = x.Name,
                     IcoPath = _api.GetArtwork(x),
-                    Action = context => Play(x)
+                    Action = _ =>
+                    {
+                        _api.Play(x.Uri);
+                        return true;
+                    }
                 };
                 results.Add(result);
             }
@@ -211,8 +219,12 @@ namespace Wox.Plugin.Spotify
             var result = _api.GetAlbums(param).Select(x => new Result()
             {
                 Title = x.Name,
-                Action = e => Play(x),
-                IcoPath = _api.GetArtwork(x)
+                IcoPath = _api.GetArtwork(x),
+                Action = _ =>
+                {
+                    _api.Play(x.Uri);
+                    return true;
+                }                
             }).ToList();
             return result;
         }
@@ -229,29 +241,15 @@ namespace Wox.Plugin.Spotify
             {
                 Title = x.Name,
                 SubTitle = $"Popularity: {x.Popularity}%",
+                IcoPath = _api.GetArtwork(x),
                 // When selected, open it with the spotify client
-                Action = e => Play(x),
-                IcoPath = _api.GetArtwork(x)
+                Action = _ =>
+                {
+                    _api.Play(x.Uri);
+                    return true;
+                }
             }).ToList();
             return results;
-        }
-
-        private bool Play(FullTrack fullTrack)
-        {
-            _api.Play(fullTrack);
-            return true;
-        }
-
-        private bool Play(SimpleAlbum album)
-        {
-            _api.Play(album);
-            return true;
-        }
-
-        private bool Play(FullArtist artist)
-        {
-            Process.Start(artist.Uri);
-            return true;
         }
     }
 }
