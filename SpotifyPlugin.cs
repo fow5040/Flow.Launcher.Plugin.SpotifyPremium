@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using SpotifyAPI.Web.Models;
 
 namespace Wox.Plugin.Spotify
 {
@@ -16,18 +14,13 @@ namespace Wox.Plugin.Spotify
         private readonly Dictionary<string, Func<string, List<Result>>> _terms = new Dictionary<string, Func<string, List<Result>>>();
 
         private const string SpotifyIcon = "icon.png";
-        private bool _isReady;
 
         public void Init(PluginInitContext context)
         {
             _context = context;
 
             // initialize data, passing it the plugin directory
-            Task.Run(() =>
-            {
-                _api = new SpotifyApi(_context.CurrentPluginMetadata.PluginDirectory);
-                _isReady = true;
-            });
+            Task.Run(() => _api = new SpotifyApi(_context.CurrentPluginMetadata.PluginDirectory));
 
             _terms.Add("artist", SearchArtist);
             _terms.Add("album", SearchAlbum);
@@ -173,7 +166,7 @@ namespace Wox.Plugin.Spotify
 
         public List<Result> Query(Query query)
         {
-            if (!_isReady)
+            if (!_api.IsRunning || !_api.IsConnected)
             {
                 return new List<Result>
                 {

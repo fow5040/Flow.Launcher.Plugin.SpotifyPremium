@@ -49,7 +49,9 @@ namespace Wox.Plugin.Spotify
 
         private string CacheFolder { get; }
 
+        public bool IsConnected { get; private set; }
 
+        public bool IsRunning => SpotifyLocalAPI.IsSpotifyRunning() && SpotifyLocalAPI.IsSpotifyWebHelperRunning();
 
         public void Play()
         {
@@ -152,15 +154,11 @@ namespace Wox.Plugin.Spotify
 
         private void ConnectToSpotify()
         {
-            if (!SpotifyLocalAPI.IsSpotifyRunning())
+            if (!IsRunning)
             {
                 return;
             }
-            if (!SpotifyLocalAPI.IsSpotifyWebHelperRunning())
-            {
-                return;
-            }
-
+            
             var successful = _localSpotify.Connect();
             if (successful)
             {
@@ -177,6 +175,7 @@ namespace Wox.Plugin.Spotify
             {
                 CurrentTrack = status.Track;
                 IsPlaying = status.Playing;
+                IsConnected = true;
             }
         }
         
