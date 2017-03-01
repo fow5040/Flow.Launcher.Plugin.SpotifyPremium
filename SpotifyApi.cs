@@ -85,6 +85,12 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public void RunSpotify()
+        {
+            if (!IsRunning)
+                SpotifyLocalAPI.RunSpotify();
+        }
+
         public IEnumerable<FullArtist> GetArtists(string s)
         {
             lock (_lock)

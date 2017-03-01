@@ -170,7 +170,17 @@ namespace Wox.Plugin.Spotify
             {
                 return new List<Result>
                 {
-                    new Result("Spotify is not running", SpotifyIcon, "please start Spotify to use this plugin...")
+                    new Result() {
+                        Title = "Spotify is not running",
+                        SubTitle = "select to open Spotify",
+                        IcoPath = SpotifyIcon,
+                        Action = _ =>
+                        {
+                            _api.RunSpotify();
+                            _context.API.ChangeQuery("");
+                            return true;
+                        }
+                    }
                 };
             }
             else if (!_api.IsConnected)
