@@ -152,7 +152,7 @@ namespace Wox.Plugin.Spotify
 
         private static string GetUniqueIdForArtwork(string uri) => uri.Substring(uri.LastIndexOf(":", StringComparison.Ordinal) + 1);
 
-        private void ConnectToSpotify()
+        public void ConnectToSpotify()
         {
             if (!IsRunning)
             {

@@ -166,12 +166,16 @@ namespace Wox.Plugin.Spotify
 
         public List<Result> Query(Query query)
         {
-            if (!_api.IsRunning || !_api.IsConnected)
+            if (!_api.IsRunning)
             {
                 return new List<Result>
                 {
-                    new Result("Spotify plugin is initializing", SpotifyIcon, "please try again soon...")
+                    new Result("Spotify is not running", SpotifyIcon, "please start Spotify to use this plugin...")
                 };
+            }
+            else if (!_api.IsConnected)
+            {
+                _api.ConnectToSpotify();
             }
 
             try
@@ -196,7 +200,7 @@ namespace Wox.Plugin.Spotify
             }
             return new List<Result>()
             {
-                new Result { Title = "No results found on Spotify.", IcoPath = SpotifyIcon, Action = context => false }
+                new Result("No results found on Spotify.", SpotifyIcon)
             };
         }
 
