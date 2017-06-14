@@ -31,59 +31,14 @@ namespace Wox.Plugin.Spotify
             _terms.Add("mute", ToggleMute);
         }
 
-        private List<Result> Play(string arg)
-        {
-            return new List<Result>()
-            {
-                new Result()
-                {
-                    IcoPath = SpotifyIcon,
-                    Title = "Play",
-                    SubTitle = $"Resume: {_api.CurrentTrack.TrackResource.Name}",
-                    Action = context =>
-                    {
-                        _api.Play();
-                        return true;
-                    }
-                }
-            };
-        }
+        private List<Result> Play(string arg) =>
+            SingleResult("Play", $"Resume: {_api.CurrentTrack.TrackResource.Name}", _api.Play);
 
-        private List<Result> Pause(string arg = null)
-        {
-            return new List<Result>()
-            {
-                new Result()
-                {
-                    IcoPath = SpotifyIcon,
-                    Title = "Pause",
-                    SubTitle = $"Pause: {_api.CurrentTrack.TrackResource.Name}",
-                    Action = context =>
-                    {
-                        _api.Pause();
-                        return true;
-                    }
-                }
-            };
-        }
+        private List<Result> Pause(string arg = null) =>
+            SingleResult("Pause", $"Pause: {_api.CurrentTrack.TrackResource.Name}", _api.Pause);
 
-        private List<Result> PlayNext(string arg)
-        {
-            return new List<Result>()
-            {
-                new Result()
-                {
-                    IcoPath = SpotifyIcon,
-                    Title = "Next",
-                    SubTitle = $"Skip: {_api.CurrentTrack.TrackResource.Name}",
-                    Action = context =>
-                    {
-                        _api.Skip();
-                        return true;
-                    }
-                }
-            };
-        }
+        private List<Result> PlayNext(string arg) =>
+            SingleResult("Next", $"Skip: {_api.CurrentTrack.TrackResource.Name}", _api.Skip);
 
         private List<Result> GetPlaying()
         {
@@ -91,15 +46,7 @@ namespace Wox.Plugin.Spotify
 
             if (t == null)
             {
-                return new List<Result>()
-                {
-                    new Result()
-                    {
-                        Action = context => true,
-                        Title = "No track playing",
-                        IcoPath = SpotifyIcon
-                    }
-                };
+                return SingleResult("No track playing");
             }
 
             var status = _api.IsPlaying ? "Now Playing" : "Paused";
@@ -148,40 +95,18 @@ namespace Wox.Plugin.Spotify
         {
             var toggleAction = _api.IsMuted ? "Unmute" : "Mute";
 
-            return new List<Result>
-            {
-                new Result()
-                {
-                    Title = "Toggle Mute",
-                    SubTitle = $"{toggleAction}: {_api.CurrentTrack.TrackResource.Name}",
-                    IcoPath = SpotifyIcon,
-                    Action = context =>
-                    {
-                        _api.ToggleMute();
-                        return true;
-                    }
-                }
-            };
+            return SingleResult("Toggle Mute", $"{toggleAction}: {_api.CurrentTrack.TrackResource.Name}", _api.ToggleMute);
         }
 
         public List<Result> Query(Query query)
         {
             if (!_api.IsRunning)
             {
-                return new List<Result>
+                return SingleResult("Spotify is not running", "select to open Spotify", () =>
                 {
-                    new Result() {
-                        Title = "Spotify is not running",
-                        SubTitle = "select to open Spotify",
-                        IcoPath = SpotifyIcon,
-                        Action = _ =>
-                        {
-                            _api.RunSpotify();
-                            _context.API.ChangeQuery("");
-                            return true;
-                        }
-                    }
-                };
+                    _api.RunSpotify();
+                    _context.API.ChangeQuery("");
+                });
             }
             else if (!_api.IsConnected)
             {
@@ -208,13 +133,8 @@ namespace Wox.Plugin.Spotify
             {
                 Console.WriteLine(e);
             }
-            return new List<Result>()
-            {
-                new Result() {
-                    Title = "No results found on Spotify.",
-                    IcoPath = SpotifyIcon
-                }
-            };
+
+            return SingleResult("No results found on Spotify.");
         }
 
         private List<Result> SearchTrack(string param)
@@ -296,23 +216,29 @@ namespace Wox.Plugin.Spotify
             return results.Select(x => x.Result).ToList();
         }
 
-        private List<Result> AuthenticateResult => new List<Result>()
-        {
-            new Result()
-            {
-                Title = "Authentication required to search the Spotify library",
-                SubTitle = "Click this to authenticate",
-                IcoPath = SpotifyIcon,
-                Action = _ => {
+        private List<Result> AuthenticateResult =>
+            SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", () =>
+                {
                     // This will prompt the user to authenticate
-                    var t = new System.Threading.Thread(async () => {
-                        await _api.ConnectWebApi();
-                    });
+                    var t = new System.Threading.Thread(async () => await _api.ConnectWebApi());
                     t.Start();
+                });
 
-                    return true;
+        // Returns a list with a single result
+        private List<Result> SingleResult(string title, string subtitle = "", Action action = default(Action)) =>
+            new List<Result>()
+            {
+                new Result()
+                {
+                    Title = title,
+                    SubTitle = subtitle,
+                    IcoPath = SpotifyIcon,
+                    Action = _ =>
+                    {
+                        action();
+                        return true;
+                    }
                 }
-            }
-        };
+            };
     }
 }

@@ -1,7 +1,5 @@
 version: 2.4.{build}
 
-platform: Any CPU
-
 configuration: Release
 
 before_build:
