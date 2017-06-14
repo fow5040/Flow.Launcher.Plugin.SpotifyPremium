@@ -41,9 +41,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="Wox.Plugin, Version=1.2.0.486, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Wox.Plugin.1.2.0.486\lib\net35\Wox.Plugin.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Wox.Plugin, Version=1.3.159.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Wox.Plugin.1.3.159\lib\net452\Wox.Plugin.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

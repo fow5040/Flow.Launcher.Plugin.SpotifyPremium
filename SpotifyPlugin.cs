@@ -210,7 +210,10 @@ namespace Wox.Plugin.Spotify
             }
             return new List<Result>()
             {
-                new Result("No results found on Spotify.", SpotifyIcon)
+                new Result() {
+                    Title = "No results found on Spotify.",
+                    IcoPath = SpotifyIcon
+                }
             };
         }
 
