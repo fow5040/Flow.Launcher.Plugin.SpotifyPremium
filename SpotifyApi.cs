@@ -8,6 +8,7 @@ using SpotifyAPI.Local;
 using SpotifyAPI.Local.Enums;
 using SpotifyAPI.Local.Models;
 using SpotifyAPI.Web;
+using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web.Enums;
 using SpotifyAPI.Web.Models;
 
@@ -16,7 +17,7 @@ namespace Wox.Plugin.Spotify
     public class SpotifyApi
     {
         private readonly SpotifyLocalAPI _localSpotify;
-        private readonly SpotifyWebAPI _spotifyApi;
+        private SpotifyWebAPI _spotifyApi;
         private readonly object _lock = new object();
 
 
@@ -34,12 +35,8 @@ namespace Wox.Plugin.Spotify
             _localSpotify.OnPlayStateChange += (o, e) => IsPlaying = e.Playing;
             ConnectToSpotify();
 
-            _spotifyApi = new SpotifyWebAPI
-            {
-                UseAuth = false
-            };
+            _spotifyApi = new SpotifyWebAPI();
         }
-        
         
         public bool IsPlaying { get; set; }
 
@@ -50,6 +47,8 @@ namespace Wox.Plugin.Spotify
         private string CacheFolder { get; }
 
         public bool IsConnected { get; private set; }
+
+        public bool IsWebApiCOnnected => !string.IsNullOrEmpty(_spotifyApi.AccessToken);
 
         public bool IsRunning => SpotifyLocalAPI.IsSpotifyRunning() && SpotifyLocalAPI.IsSpotifyWebHelperRunning();
 
@@ -89,6 +88,12 @@ namespace Wox.Plugin.Spotify
         {
             if (!IsRunning)
                 SpotifyLocalAPI.RunSpotify();
+        }
+
+        public async Task ConnectWebApi()
+        {
+            var webApiFactory = new WebAPIFactory("http://localhost", 8000, "3e271cd3f0634b92a991f60601f9db44", Scope.None, TimeSpan.FromSeconds(40));
+            _spotifyApi = await webApiFactory.GetWebApi();
         }
 
         public IEnumerable<FullArtist> GetArtists(string s)

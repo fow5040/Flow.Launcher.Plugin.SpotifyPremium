@@ -216,6 +216,8 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchTrack(string param)
         {
+            if (!_api.IsWebApiCOnnected) return AuthenticateResult;
+
             if (string.IsNullOrWhiteSpace(param))
             {
                 return new List<Result>();
@@ -240,6 +242,8 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchAlbum(string param)
         {
+            if (!_api.IsWebApiCOnnected) return AuthenticateResult;
+
             if (string.IsNullOrWhiteSpace(param))
             {
                 return new List<Result>();
@@ -264,6 +268,8 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchArtist(string param)
         {
+            if (!_api.IsWebApiCOnnected) return AuthenticateResult;
+
             if (string.IsNullOrWhiteSpace(param))
             {
                 return new List<Result>();
@@ -286,5 +292,24 @@ namespace Wox.Plugin.Spotify
             Task.WaitAll(results);
             return results.Select(x => x.Result).ToList();
         }
+
+        private List<Result> AuthenticateResult => new List<Result>()
+        {
+            new Result()
+            {
+                Title = "Authentication required to search the Spotify library",
+                SubTitle = "Click this to authenticate",
+                IcoPath = SpotifyIcon,
+                Action = _ => {
+                    // This will prompt the user to authenticate
+                    var t = new System.Threading.Thread(async () => {
+                        await _api.ConnectWebApi();
+                    });
+                    t.Start();
+
+                    return true;
+                }
+            }
+        };
     }
 }
