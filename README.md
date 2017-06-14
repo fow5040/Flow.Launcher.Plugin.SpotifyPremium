@@ -10,22 +10,16 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 ![image](http://i.imgur.com/AfUkPvd.gif)
 
 ### Usage
-
-Show currently playing track: `` sp ``
-
-Search for tracks: `` sp {track title, artist name, or album} ``
-
-Search for an artist: `` sp artist {artist name} ``
-
-Search for an album: `` sp album {album name} ``
-
-Play next track: `` sp next ``
-
-Play: `` sp play ``
-
-Pause: `` sp pause ``
-
-Toggle Mute: `` sp mute ``
+| Keyword                            | Description                   |
+| ---------------------------------- | ----------------------------- |
+| `` sp ``                           | Show currently playing track  |
+| `` sp {track, artist, or album} `` | Search for tracks             |
+| `` sp artist {artist name} ``      | Search for an artist          |
+| `` sp album {album name} ``        | Search for an album           |
+| `` sp next ``                      | Play next track               |
+| `` sp play ``                      | Resume currently playing track|
+| `` sp pause ``                     | Pause currently playing track |
+| `` sp mute ``                      | Toggle Mute                   |
 
 ### Third-Party Libraries
 
@@ -34,5 +28,8 @@ Toggle Mute: `` sp mute ``
 
 ## To Do - Ideas
 
+- Better solution to [#6](https://github.com/JohnTheGr8/Wox.Plugin.Spotify/issues/6)
+- Search user content (playlists, saved music)
+- Configurable default search type (now track search is default, album/playlist search might be more suitable to some)
 - User Configuration (#1)
 - Clear Cache folder

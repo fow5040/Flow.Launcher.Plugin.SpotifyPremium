@@ -5,4 +5,4 @@ platform: Any CPU
 configuration: Release
 
 before_build:
-  - nuget restore
+  - cmd: nuget restore packages.config -PackagesDirectory ..\packages
