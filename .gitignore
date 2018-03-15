@@ -23,3 +23,5 @@ build/
 _ReSharper*/
 *.[Rr]e[Ss]harper
 packages/
+
+.vs/
