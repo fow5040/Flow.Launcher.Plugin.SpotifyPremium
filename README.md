@@ -21,6 +21,12 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp pause ``                     | Pause currently playing track |
 | `` sp mute ``                      | Toggle Mute                   |
 
+### Notice
+
+Make sure your local Spotify client has `Allow Spotify to be opened from the web` turned on, otherwise the plugin will inform you that `Spotify is not running`. 
+
+You can find this option in `Preferences > Startup and Window Behaviour`.
+
 ### Third-Party Libraries
 
 - [SpotifyAPI-NET](https://github.com/JohnnyCrazy/SpotifyAPI-NET) : Spotify API wrapper
