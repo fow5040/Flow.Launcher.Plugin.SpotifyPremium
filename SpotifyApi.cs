@@ -92,7 +92,7 @@ namespace Wox.Plugin.Spotify
 
         public async Task ConnectWebApi()
         {
-            var webApiFactory = new WebAPIFactory("http://localhost", 8000, "3e271cd3f0634b92a991f60601f9db44", Scope.None, TimeSpan.FromSeconds(40));
+            var webApiFactory = new WebAPIFactory("http://localhost", 8580, "3e271cd3f0634b92a991f60601f9db44", Scope.None, TimeSpan.FromSeconds(40));
             _spotifyApi = await webApiFactory.GetWebApi();
         }
 
