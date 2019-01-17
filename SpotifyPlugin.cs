@@ -59,7 +59,7 @@ namespace Wox.Plugin.Spotify
                 new Result()
                 {
                     Title = t.Name,
-                    SubTitle = $"{status} | by {t.Artists.ToString()}",
+                    SubTitle = $"{status} | by {String.Join(", ",t.Artists.Select(a => String.Join("",a.Name)))}",
                     IcoPath = icon.Result
                 },
                 new Result()
