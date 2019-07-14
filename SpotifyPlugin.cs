@@ -91,6 +91,17 @@ namespace Wox.Plugin.Spotify
                         return true;
                     }
                 },
+                new Result()
+                {
+                    IcoPath = SpotifyIcon,
+                    Title = "Last",
+                    SubTitle = "Skip backwards",
+                    Action = context =>
+                    {
+                        _api.SkipBack();
+                        return true;
+                    }
+                },
                 ToggleMute().First()
             };
         }

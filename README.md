@@ -17,15 +17,13 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp artist {artist name} ``      | Search for an artist          |
 | `` sp album {album name} ``        | Search for an album           |
 | `` sp next ``                      | Play next track               |
+| `` sp last ``                      | Play previous track           |
 | `` sp play ``                      | Resume currently playing track|
 | `` sp pause ``                     | Pause currently playing track |
 | `` sp mute ``                      | Toggle Mute                   |
 
 ### Notice
-
-Make sure your local Spotify client has `Allow Spotify to be opened from the web` turned on, otherwise the plugin will inform you that `Spotify is not running`. 
-
-You can find this option in `Preferences > Startup and Window Behaviour`.
+- Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
 
 ### Third-Party Libraries
 
