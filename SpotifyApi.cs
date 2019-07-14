@@ -89,6 +89,11 @@ namespace Wox.Plugin.Spotify
             _spotifyApi.SkipPlaybackToNextAsync();
         }
 
+        public void SkipBack()
+        {
+            _spotifyApi.SkipPlaybackToPreviousAsync();
+	    }
+
         public void ToggleMute()
         {
             Device currentDevice = PlaybackContext.Device;

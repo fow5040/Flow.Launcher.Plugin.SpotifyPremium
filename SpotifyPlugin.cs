@@ -26,6 +26,7 @@ namespace Wox.Plugin.Spotify
             _terms.Add("album", SearchAlbum);
             _terms.Add("track", SearchTrack);
             _terms.Add("next", PlayNext);
+	        _terms.Add("last", PlayLast);
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
@@ -39,6 +40,9 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> PlayNext(string arg) =>
             SingleResult("Next", $"Skip: {_api.PlaybackContext.Item.Name}", _api.Skip);
+
+        private List<Result> PlayLast(string arg) =>
+            SingleResult("Last", "Skip Backwards", _api.SkipBack);
 
         private List<Result> GetPlaying()
         {
