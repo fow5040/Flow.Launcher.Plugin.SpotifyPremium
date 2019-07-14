@@ -32,25 +32,25 @@ namespace Wox.Plugin.Spotify
         }
 
         private List<Result> Play(string arg) =>
-            SingleResult("Play", $"Resume: {_api.CurrentTrack.TrackResource.Name}", _api.Play);
+            SingleResult("Play", $"Resume: {_api.PlaybackContext.Item.Name}", _api.Play);
 
         private List<Result> Pause(string arg = null) =>
-            SingleResult("Pause", $"Pause: {_api.CurrentTrack.TrackResource.Name}", _api.Pause);
+            SingleResult("Pause", $"Pause: {_api.PlaybackContext.Item.Name}", _api.Pause);
 
         private List<Result> PlayNext(string arg) =>
-            SingleResult("Next", $"Skip: {_api.CurrentTrack.TrackResource.Name}", _api.Skip);
+            SingleResult("Next", $"Skip: {_api.PlaybackContext.Item.Name}", _api.Skip);
 
         private List<Result> GetPlaying()
         {
-            var t = _api.CurrentTrack;
+            var t = _api.PlaybackContext.Item;
 
             if (t == null)
             {
                 return SingleResult("No track playing");
             }
 
-            var status = _api.IsPlaying ? "Now Playing" : "Paused";
-            var toggleAction = _api.IsPlaying ? "Pause" : "Resume";
+            var status = _api.PlaybackContext.IsPlaying ? "Now Playing" : "Paused";
+            var toggleAction = _api.PlaybackContext.IsPlaying ? "Pause" : "Resume";
             var icon = _api.GetArtworkAsync(t);
             icon.Wait();
 
@@ -58,18 +58,18 @@ namespace Wox.Plugin.Spotify
             {
                 new Result()
                 {
-                    Title = t.TrackResource.Name,
-                    SubTitle = $"{status} | by {t.ArtistResource.Name}",
+                    Title = t.Name,
+                    SubTitle = $"{status} | by {String.Join(", ",t.Artists.Select(a => String.Join("",a.Name)))}",
                     IcoPath = icon.Result
                 },
                 new Result()
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Pause / Resume",
-                    SubTitle = $"{toggleAction}: {t.TrackResource.Name}",
+                    SubTitle = $"{toggleAction}: {t.Name}",
                     Action = _ =>
                     {
-                        if (_api.IsPlaying)
+                        if (_api.PlaybackContext.IsPlaying)
                             _api.Pause();
                         else
                             _api.Play();
@@ -80,7 +80,7 @@ namespace Wox.Plugin.Spotify
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Next",
-                    SubTitle = $"Skip: {t.TrackResource.Name}",
+                    SubTitle = $"Skip: {t.Name}",
                     Action = context =>
                     {
                         _api.Skip();
@@ -95,22 +95,18 @@ namespace Wox.Plugin.Spotify
         {
             var toggleAction = _api.IsMuted ? "Unmute" : "Mute";
 
-            return SingleResult("Toggle Mute", $"{toggleAction}: {_api.CurrentTrack.TrackResource.Name}", _api.ToggleMute);
+            return SingleResult("Toggle Mute", $"{toggleAction}: {_api.PlaybackContext.Item.Name}", _api.ToggleMute);
         }
 
         public List<Result> Query(Query query)
         {
-            if (!_api.IsRunning)
+            if (!_api.IsApiConnected)
             {
-                return SingleResult("Spotify is not running", "select to open Spotify", () =>
+                return SingleResult("Spotify API unreachable", "Select to re-authorize", () =>
                 {
-                    _api.RunSpotify();
+                    _api.ConnectWebApi();
                     _context.API.ChangeQuery("");
                 });
-            }
-            else if (!_api.IsConnected)
-            {
-                _api.ConnectToSpotify();
             }
 
             try
@@ -139,7 +135,7 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchTrack(string param)
         {
-            if (!_api.IsWebApiCOnnected) return AuthenticateResult;
+            if (!_api.IsApiConnected) return AuthenticateResult;
 
             if (string.IsNullOrWhiteSpace(param))
             {
@@ -165,7 +161,7 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchAlbum(string param)
         {
-            if (!_api.IsWebApiCOnnected) return AuthenticateResult;
+            if (!_api.IsApiConnected) return AuthenticateResult;
 
             if (string.IsNullOrWhiteSpace(param))
             {
@@ -191,7 +187,7 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchArtist(string param)
         {
-            if (!_api.IsWebApiCOnnected) return AuthenticateResult;
+            if (!_api.IsApiConnected) return AuthenticateResult;
 
             if (string.IsNullOrWhiteSpace(param))
             {

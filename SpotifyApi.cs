@@ -1,25 +1,23 @@
+using SpotifyAPI.Web;
+using SpotifyAPI.Web.Auth;
+using SpotifyAPI.Web.Enums;
+using SpotifyAPI.Web.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using SpotifyAPI.Local;
-using SpotifyAPI.Local.Enums;
-using SpotifyAPI.Local.Models;
-using SpotifyAPI.Web;
-using SpotifyAPI.Web.Auth;
-using SpotifyAPI.Web.Enums;
-using SpotifyAPI.Web.Models;
 
 namespace Wox.Plugin.Spotify
 {
     public class SpotifyApi
     {
-        private readonly SpotifyLocalAPI _localSpotify;
+        //private readonly SpotifyLocalAPI _localSpotify;
         private SpotifyWebAPI _spotifyApi;
         private readonly object _lock = new object();
-
+        private int mLastVolume = 10;
+        private SecurityStore _securityStore;
 
         public SpotifyApi(string pluginDir = null)
         {
@@ -30,70 +28,102 @@ namespace Wox.Plugin.Spotify
             if (!Directory.Exists(CacheFolder))
                 Directory.CreateDirectory(CacheFolder);
 
-            _localSpotify = new SpotifyLocalAPI();
+            /*_localSpotify = new SpotifyLocalAPI();
             _localSpotify.OnTrackChange += (o, e) => CurrentTrack = e.NewTrack;
-            _localSpotify.OnPlayStateChange += (o, e) => IsPlaying = e.Playing;
-            ConnectToSpotify();
+            _localSpotify.OnPlayStateChange += (o, e) => IsPlaying = e.Playing;*/
+        }
 
-            _spotifyApi = new SpotifyWebAPI();
+        //public bool IsPlaying { get; set; }
+
+        public bool IsMuted
+        {
+            get
+            {
+                return PlaybackContext.Device.VolumePercent == 0;
+            }
         }
         
-        public bool IsPlaying { get; set; }
-
-        public bool IsMuted => _localSpotify.IsSpotifyMuted();
-
-        public Track CurrentTrack { get; private set; }
+        public PlaybackContext PlaybackContext {
+            get
+            {
+                return _spotifyApi.GetPlayback();
+            }
+        }
 
         private string CacheFolder { get; }
 
-        public bool IsConnected { get; private set; }
+        //public bool IsConnected { get; private set; }
 
-        public bool IsWebApiCOnnected => !string.IsNullOrEmpty(_spotifyApi.AccessToken);
+        public bool IsApiConnected
+        {
+            get
+            {
+                return _spotifyApi != null;
+            }
+        }
 
-        public bool IsRunning => SpotifyLocalAPI.IsSpotifyRunning() && SpotifyLocalAPI.IsSpotifyWebHelperRunning();
+        //public bool IsRunning => SpotifyLocalAPI.IsSpotifyRunning() && SpotifyLocalAPI.IsSpotifyWebHelperRunning();
 
         public void Play()
         {
-            _localSpotify.Play();
+            _spotifyApi.ResumePlaybackAsync("", "", null, "", 0);
         }
 
         public void Play(string uri)
         {
-            _localSpotify.PlayURL(uri);
+            _spotifyApi.ResumePlaybackAsync("","", new List<string>() { uri }, "", 0);
         }
 
         public void Pause()
         {
-            _localSpotify.Pause();
+            _spotifyApi.PausePlaybackAsync();
         }
 
         public void Skip()
         {
-            _localSpotify.Skip();
+            _spotifyApi.SkipPlaybackToNextAsync();
         }
 
         public void ToggleMute()
         {
-            if (_localSpotify.IsSpotifyMuted())
+            Device currentDevice = PlaybackContext.Device;
+            if(currentDevice.VolumePercent != 0)
             {
-                _localSpotify.UnMute();
+                mLastVolume = currentDevice.VolumePercent;
+                _spotifyApi.SetVolumeAsync(0, currentDevice.Id);
             }
             else
             {
-                _localSpotify.Mute();
+                _spotifyApi.SetVolumeAsync(mLastVolume, currentDevice.Id);
             }
-        }
-
-        public void RunSpotify()
-        {
-            if (!IsRunning)
-                SpotifyLocalAPI.RunSpotify();
         }
 
         public async Task ConnectWebApi()
         {
-            var webApiFactory = new WebAPIFactory("http://localhost", 8580, "3e271cd3f0634b92a991f60601f9db44", Scope.None, TimeSpan.FromSeconds(40));
-            _spotifyApi = await webApiFactory.GetWebApi();
+            _securityStore = SecurityStore.Load();
+
+            AuthorizationCodeAuth auth = new AuthorizationCodeAuth("e7a7f5858f1840848ab680ce764778d4", "85e2bdf0e0e2487ca8103229081a0a80", "http://localhost:4002", "http://localhost:4002",
+               Scope.PlaylistReadPrivate | Scope.PlaylistReadCollaborative | Scope.UserReadCurrentlyPlaying | Scope.UserReadPlaybackState | Scope.UserModifyPlaybackState | Scope.Streaming | Scope.UserFollowModify);
+
+
+            if (_securityStore.HasRefreshToken)
+            {
+                Token token = await auth.RefreshToken(_securityStore.RefreshToken);
+                _spotifyApi = new SpotifyWebAPI() { TokenType = token.TokenType, AccessToken = token.AccessToken };
+            }
+            else
+            {
+                auth.AuthReceived += async (sender, payload) =>
+                {
+                    auth.Stop();
+                    Token token = await auth.ExchangeCode(payload.Code);
+                    _securityStore.RefreshToken = token.RefreshToken;
+                    _securityStore.Save();
+                    _spotifyApi = new SpotifyWebAPI() { TokenType = token.TokenType, AccessToken = token.AccessToken };
+                };
+                auth.Start();
+                auth.OpenBrowser();
+            }
         }
 
         public IEnumerable<FullArtist> GetArtists(string s)
@@ -136,13 +166,6 @@ namespace Wox.Plugin.Spotify
 
         public Task<string> GetArtworkAsync(FullTrack track) => GetArtworkAsync(track.Album);
 
-        public Task<string> GetArtworkAsync(Track track)
-        {
-            var albumArtUrl = track.GetAlbumArtUrl(AlbumArtSize.Size160);
-
-            return GetArtworkAsync(albumArtUrl, track.TrackResource.Uri);
-        }
-
         private Task<string> GetArtworkAsync(List<Image> images, string uri)
         {
             if (!images.Any())
@@ -163,7 +186,7 @@ namespace Wox.Plugin.Spotify
 
         private static string GetUniqueIdForArtwork(string uri) => uri.Substring(uri.LastIndexOf(":", StringComparison.Ordinal) + 1);
 
-        public void ConnectToSpotify()
+        /*public void ConnectToSpotify()
         {
             if (!IsRunning)
             {
@@ -176,9 +199,9 @@ namespace Wox.Plugin.Spotify
                 UpdateInfos();
                 _localSpotify.ListenForEvents = true;
             }
-        }
+        }*/
 
-        private void UpdateInfos()
+        /*private void UpdateInfos()
         {
             var status = _localSpotify.GetStatus();
 
@@ -188,7 +211,7 @@ namespace Wox.Plugin.Spotify
                 IsPlaying = status.Playing;
                 IsConnected = true;
             }
-        }
+        }*/
         
         private async Task<string> DownloadImageAsync(string uniqueId, string url)
         {
