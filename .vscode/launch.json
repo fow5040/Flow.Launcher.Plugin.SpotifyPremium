@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Launch (console) [DO NOT USE]",
+            "name": ".NET Launch",
             "type": "clr",
             "request": "launch",
-            "program": "${workspaceFolder}/obj/Debug/Wox.Plugin.Spotify.dll",
+            "program": "${env:LOCALAPPDATA}/Wox/Wox.exe",//"%LOCALAPPDATA%/Wox/Wox.exe",
             "args": [],
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
@@ -18,7 +18,8 @@
             "name": ".NET Attach",
             "type": "clr",
             "request": "attach",
-            "processId": "${command:pickProcess}"
+            "processName": "wox.exe"
+            //"processId": "${command:pickProcess}"
         }
     ]
 }

@@ -3,4 +3,4 @@ version: 2.4.{build}
 configuration: Release
 
 before_build:
-  - cmd: nuget restore packages.config -PackagesDirectory ..\packages
+  - cmd: nuget restore packages.config -PackagesDirectory .\packages
