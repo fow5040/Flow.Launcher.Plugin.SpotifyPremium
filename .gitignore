@@ -25,3 +25,4 @@ _ReSharper*/
 packages/
 
 .vs/
+security.store

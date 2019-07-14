@@ -24,6 +24,12 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
+- To get started:
+    - Restore all NuGet dependencies (nuget restore packages.config -PackagesDirectory .\packages)
+    - Stop Wox
+    - Run build script
+    - Restart Wox
+    - Attach to Wox 
 
 ### Third-Party Libraries
 
