@@ -71,7 +71,12 @@ namespace Wox.Plugin.Spotify
 
         public void Play(string uri)
         {
-            _spotifyApi.ResumePlaybackAsync("","", new List<string>() { uri }, "", 0);
+            if(uri.Contains(":track:")){
+                _spotifyApi.ResumePlaybackAsync("","", new List<string>() { uri }, "", 0);
+            }
+            else{
+                _spotifyApi.ResumePlaybackAsync("",uri, null, "", 0);
+            }
         }
 
         public void Pause()
