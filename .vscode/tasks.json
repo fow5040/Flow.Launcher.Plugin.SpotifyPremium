@@ -14,7 +14,8 @@
             "presentation": {
                 "reveal": "silent"
             },
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "dependsOn":["stopWox"]
         },
         {
             "label": "build release",
@@ -35,6 +36,35 @@
                 "reveal": "silent"
             },
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "refreshWox",
+            "command": "${env:LOCALAPPDATA}/Wox/Wox.exe",
+            "args": ["reloadplugin"],
+            "type": "shell",
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "startWox",
+            "command": "${env:LOCALAPPDATA}/Wox/Wox.exe",
+            "type": "shell",
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "stopWox",
+            "command": "taskkill /IM Wox.exe",
+            "type": "shell",
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
         }
+
     ]
 }

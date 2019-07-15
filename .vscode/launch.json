@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Launch",
+            "name": ".NET Launch | DO NOT USE",
             "type": "clr",
             "request": "launch",
             "program": "${env:LOCALAPPDATA}/Wox/Wox.exe",//"%LOCALAPPDATA%/Wox/Wox.exe",
@@ -18,8 +18,8 @@
             "name": ".NET Attach",
             "type": "clr",
             "request": "attach",
-            "processName": "wox.exe"
-            //"processId": "${command:pickProcess}"
+            "processName": "wox.exe",
+            "preLaunchTask": "refreshWox"
         }
     ]
 }
