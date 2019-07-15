@@ -21,6 +21,7 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp play ``                      | Resume currently playing track|
 | `` sp pause ``                     | Pause currently playing track |
 | `` sp mute ``                      | Toggle Mute                   |
+| `` sp device ``                    | Set Active Device             |
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin

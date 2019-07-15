@@ -30,6 +30,7 @@ namespace Wox.Plugin.Spotify
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
+            _terms.Add("device", GetDevices);
         }
 
         private List<Result> Play(string arg) =>
@@ -227,6 +228,11 @@ namespace Wox.Plugin.Spotify
             return results.Select(x => x.Result).ToList();
         }
 
+        private List<Result> GetDevices(string param = null)
+        {
+            return SingleResult("Devices","To Be Implemented",()=>{});
+        }
+        
         private List<Result> AuthenticateResult =>
             SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", () =>
                 {
