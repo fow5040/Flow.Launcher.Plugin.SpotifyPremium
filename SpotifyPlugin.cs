@@ -183,7 +183,22 @@ namespace Wox.Plugin.Spotify
                 Console.WriteLine(e);
             }
 
-            return SingleResult("No results found on Spotify.");
+            return SingleResult("No results found on Spotify.","Is your device connected?",() => {
+                //TEST force a reconnect
+                Task connectTask = _api.ConnectWebApi();
+                //Assign client ID asynchronously when connection finishes
+                connectTask.ContinueWith((connectResult) => { 
+                    try{
+                        currentUserId = _api.GetUserID();
+                    }
+                    catch{
+                        Console.WriteLine("Failed to write client ID");
+                    }
+                });
+                //TEST
+                //CONFIRM :: Reconnecting to the API allows us to select a device ID
+                //TODO :: Refactor solution so the reconnection is only required when song searching is failing
+            });
         }
 
         private List<Result> SearchTrack(string param)
