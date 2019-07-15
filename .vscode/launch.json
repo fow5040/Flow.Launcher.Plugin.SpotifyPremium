@@ -19,7 +19,7 @@
             "type": "clr",
             "request": "attach",
             "processName": "wox.exe",
-            "preLaunchTask": "refreshWox"
+            "preLaunchTask": "startWox"
         }
     ]
 }

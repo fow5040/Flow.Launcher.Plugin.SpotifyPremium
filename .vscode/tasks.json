@@ -15,7 +15,9 @@
                 "reveal": "silent"
             },
             "problemMatcher": "$msCompile",
-            "dependsOn":["stopWox"]
+            "dependsOn": [
+                "stopWox"
+            ]
         },
         {
             "label": "build release",
@@ -40,7 +42,9 @@
         {
             "label": "refreshWox",
             "command": "${env:LOCALAPPDATA}/Wox/Wox.exe",
-            "args": ["reloadplugin"],
+            "args": [
+                "reloadplugin"
+            ],
             "type": "shell",
             "presentation": {
                 "reveal": "silent"
@@ -65,6 +69,5 @@
             },
             "problemMatcher": "$msCompile"
         }
-
     ]
 }
