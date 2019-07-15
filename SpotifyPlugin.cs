@@ -15,6 +15,8 @@ namespace Wox.Plugin.Spotify
 
         private const string SpotifyIcon = "icon.png";
 
+        private string currentUserId; //Required for playlist querying
+
         public void Init(PluginInitContext context)
         {
             _context = context;
@@ -24,6 +26,7 @@ namespace Wox.Plugin.Spotify
 
             _terms.Add("artist", SearchArtist);
             _terms.Add("album", SearchAlbum);
+            _terms.Add("playlist", SearchPlaylist);
             _terms.Add("track", SearchTrack);
             _terms.Add("next", PlayNext);
 	        _terms.Add("last", PlayLast);
@@ -119,7 +122,16 @@ namespace Wox.Plugin.Spotify
             {
                 return SingleResult("Spotify API unreachable", "Select to re-authorize", () =>
                 {
-                    _api.ConnectWebApi();
+                    Task connectTask = _api.ConnectWebApi();
+                    //Assign client ID asynchronously when connection finishes
+                    connectTask.ContinueWith((connectResult) => { 
+                        try{
+                            currentUserId = _api.GetUserID();
+                        }
+                        catch{
+                            Console.WriteLine("Failed to write client ID");
+                        }
+                        });
                     _context.API.ChangeQuery("");
                 });
             }
@@ -221,6 +233,32 @@ namespace Wox.Plugin.Spotify
                     _api.Play(x.Uri);
                     return true;
                 }
+            }).ToArray();
+
+            Task.WaitAll(results);
+            return results.Select(x => x.Result).ToList();
+        }
+
+        private List<Result> SearchPlaylist(string param)
+        {
+            if (!_api.IsApiConnected) return AuthenticateResult;
+
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                param = "";
+            }
+
+            // Retrieve data and return the first 50 playlists
+            var results = _api.GetPlaylists(param,currentUserId).Select(async x => new Result()
+            {
+                Title = x.Name,
+                SubTitle = x.Type,
+                IcoPath = await _api.GetArtworkAsync(x.Images,x.Uri),
+                Action = _ =>
+                {
+                    _api.Play(x.Uri);
+                    return true;
+                }                
             }).ToArray();
 
             Task.WaitAll(results);
