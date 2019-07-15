@@ -5,6 +5,10 @@
     "tasks": [
         {
             "label": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "dependsOrder": "sequence",
             "dependsOn": [
                 "stopWox",
@@ -16,10 +20,6 @@
             "label": "build debug",
             "command": "dotnet build",
             "type": "shell",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
             "presentation": {
                 "reveal": "silent"
             },
