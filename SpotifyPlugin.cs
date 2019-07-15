@@ -33,12 +33,9 @@ namespace Wox.Plugin.Spotify
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
-<<<<<<< HEAD
-            _terms.Add("device", GetDevices);
-=======
             _terms.Add("vol", SetVolume);
             _terms.Add("volume", SetVolume);
->>>>>>> a4b71af99f4046686b20639417827b99af2a230e
+            _terms.Add("device", GetDevices);
             _terms.Add("shuffle", ToggleShuffle);
         }
 
