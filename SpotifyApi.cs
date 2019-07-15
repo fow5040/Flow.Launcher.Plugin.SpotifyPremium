@@ -205,6 +205,19 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public List<Device> GetDevices()
+        {
+            lock (_lock)
+            {
+                return _spotifyApi.GetDevices().Devices;
+            }
+        }
+
+        public void SetDevice(string deviceId = "")
+        {
+            _spotifyApi.TransferPlayback(new List<string>{deviceId}, false);
+        }
+
         public Task<string> GetArtworkAsync(SimpleAlbum album) => GetArtworkAsync(album.Images, album.Uri);
 
         public Task<string> GetArtworkAsync(FullAlbum album) => GetArtworkAsync(album.Images, album.Uri);

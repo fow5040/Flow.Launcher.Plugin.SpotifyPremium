@@ -33,11 +33,8 @@ namespace Wox.Plugin.Spotify
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
-<<<<<<< HEAD
             _terms.Add("device", GetDevices);
-=======
             _terms.Add("shuffle", ToggleShuffle);
->>>>>>> 727117b1f80a2f55db28f8ab01ffc0793a5fe2c3
         }
 
         private List<Result> Play(string arg) =>
@@ -251,14 +248,6 @@ namespace Wox.Plugin.Spotify
             Task.WaitAll(results);
             return results.Select(x => x.Result).ToList();
         }
-
-<<<<<<< HEAD
-        private List<Result> GetDevices(string param = null)
-        {
-            return SingleResult("Devices","To Be Implemented",()=>{});
-        }
-        
-=======
         private List<Result> SearchPlaylist(string param)
         {
             if (!_api.IsApiConnected) return AuthenticateResult;
@@ -285,7 +274,26 @@ namespace Wox.Plugin.Spotify
             return results.Select(x => x.Result).ToList();
         }
 
->>>>>>> 727117b1f80a2f55db28f8ab01ffc0793a5fe2c3
+        private List<Result> GetDevices(string param = null)
+        {
+            //Retrieve all available devices
+            var results = _api.GetDevices().Where( device => !device.IsRestricted).Select(async x => new Result()
+            {
+                Title = $"{x.Type}  {x.Name}",
+                SubTitle = x.IsActive ? "Active Device" : "Inactive",
+                //TODO: Add computer and phone icons
+                //IcoPath = await _api.GetArtworkAsync(x.Images,x.Uri),
+                Action = _ =>
+                {
+                    _api.SetDevice(x.Id);
+                    return true;
+                }                
+            }).ToArray();
+
+            Task.WaitAll(results);
+            return results.Select(x => x.Result).ToList();
+        }
+        
         private List<Result> AuthenticateResult =>
             SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", () =>
                 {

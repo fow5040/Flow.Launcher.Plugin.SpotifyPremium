@@ -22,11 +22,8 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp play ``                      | Resume currently playing track|
 | `` sp pause ``                     | Pause currently playing track |
 | `` sp mute ``                      | Toggle Mute                   |
-<<<<<<< HEAD
 | `` sp device ``                    | Set Active Device             |
-=======
 | `` sp shuffle ``                   | Toggle Shuffle Mode           |
->>>>>>> 727117b1f80a2f55db28f8ab01ffc0793a5fe2c3
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
