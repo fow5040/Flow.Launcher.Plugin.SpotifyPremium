@@ -15,6 +15,8 @@ namespace Wox.Plugin.Spotify
 
         private const string SpotifyIcon = "icon.png";
 
+        private string currentUserId; //Required for playlist querying
+
         public void Init(PluginInitContext context)
         {
             _context = context;
@@ -24,13 +26,18 @@ namespace Wox.Plugin.Spotify
 
             _terms.Add("artist", SearchArtist);
             _terms.Add("album", SearchAlbum);
+            _terms.Add("playlist", SearchPlaylist);
             _terms.Add("track", SearchTrack);
             _terms.Add("next", PlayNext);
 	        _terms.Add("last", PlayLast);
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
+<<<<<<< HEAD
             _terms.Add("device", GetDevices);
+=======
+            _terms.Add("shuffle", ToggleShuffle);
+>>>>>>> 727117b1f80a2f55db28f8ab01ffc0793a5fe2c3
         }
 
         private List<Result> Play(string arg) =>
@@ -103,7 +110,8 @@ namespace Wox.Plugin.Spotify
                         return true;
                     }
                 },
-                ToggleMute().First()
+                ToggleMute().First(),
+                ToggleShuffle().First()
             };
         }
 
@@ -114,13 +122,29 @@ namespace Wox.Plugin.Spotify
             return SingleResult("Toggle Mute", $"{toggleAction}: {_api.PlaybackContext.Item.Name}", _api.ToggleMute);
         }
 
+        private List<Result> ToggleShuffle(string arg = null)
+        {
+            var toggleAction = _api.IsShuffled ? "Off" : "On";
+
+            return SingleResult("Toggle Shuffle", $"Turn Shuffle {toggleAction}", _api.ToggleShuffle);
+        }
+
         public List<Result> Query(Query query)
         {
             if (!_api.IsApiConnected)
             {
                 return SingleResult("Spotify API unreachable", "Select to re-authorize", () =>
                 {
-                    _api.ConnectWebApi();
+                    Task connectTask = _api.ConnectWebApi();
+                    //Assign client ID asynchronously when connection finishes
+                    connectTask.ContinueWith((connectResult) => { 
+                        try{
+                            currentUserId = _api.GetUserID();
+                        }
+                        catch{
+                            Console.WriteLine("Failed to write client ID");
+                        }
+                        });
                     _context.API.ChangeQuery("");
                 });
             }
@@ -228,11 +252,40 @@ namespace Wox.Plugin.Spotify
             return results.Select(x => x.Result).ToList();
         }
 
+<<<<<<< HEAD
         private List<Result> GetDevices(string param = null)
         {
             return SingleResult("Devices","To Be Implemented",()=>{});
         }
         
+=======
+        private List<Result> SearchPlaylist(string param)
+        {
+            if (!_api.IsApiConnected) return AuthenticateResult;
+
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                param = "";
+            }
+
+            // Retrieve data and return the first 50 playlists
+            var results = _api.GetPlaylists(param,currentUserId).Select(async x => new Result()
+            {
+                Title = x.Name,
+                SubTitle = x.Type,
+                IcoPath = await _api.GetArtworkAsync(x.Images,x.Uri),
+                Action = _ =>
+                {
+                    _api.Play(x.Uri);
+                    return true;
+                }                
+            }).ToArray();
+
+            Task.WaitAll(results);
+            return results.Select(x => x.Result).ToList();
+        }
+
+>>>>>>> 727117b1f80a2f55db28f8ab01ffc0793a5fe2c3
         private List<Result> AuthenticateResult =>
             SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", () =>
                 {

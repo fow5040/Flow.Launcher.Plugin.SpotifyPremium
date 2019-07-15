@@ -43,6 +43,13 @@ namespace Wox.Plugin.Spotify
             }
         }
         
+        public bool IsShuffled
+        {
+            get{
+                return PlaybackContext.ShuffleState;
+            }
+        }
+
         public PlaybackContext PlaybackContext {
             get
             {
@@ -108,6 +115,11 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public void ToggleShuffle()
+        {
+            _spotifyApi.SetShuffleAsync(!IsShuffled);
+        }
+
         public async Task ConnectWebApi()
         {
             _securityStore = SecurityStore.Load();
@@ -134,6 +146,10 @@ namespace Wox.Plugin.Spotify
                 auth.Start();
                 auth.OpenBrowser();
             }
+        }
+
+        public string GetUserID(){
+            return _spotifyApi.GetPrivateProfile().Id;
         }
 
         public IEnumerable<FullArtist> GetArtists(string s)
@@ -168,6 +184,27 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public IEnumerable<SimplePlaylist> GetPlaylists(string s, string currentUserID)
+        {
+
+            lock (_lock)
+            {
+                FeaturedPlaylists featuredPlaylists = _spotifyApi.GetFeaturedPlaylists();
+                Paging<SimplePlaylist> userPlaylistsPaging = _spotifyApi.GetUserPlaylists(currentUserID,50);
+                while (true)
+                {
+                    if (!userPlaylistsPaging.HasNextPage())
+                        break;
+                    userPlaylistsPaging = _spotifyApi.GetNextPage(userPlaylistsPaging);
+                }
+                // Filter results based on search and combine into one large SimplePlaylists list
+                List<SimplePlaylist> returnedPlaylists = userPlaylistsPaging.Items.Where( playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList();
+                List<SimplePlaylist> returnedFeaturedPlaylists = featuredPlaylists.Playlists.Items.Where( playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList();
+
+                return returnedPlaylists.Concat(returnedFeaturedPlaylists);
+            }
+        }
+
         public Task<string> GetArtworkAsync(SimpleAlbum album) => GetArtworkAsync(album.Images, album.Uri);
 
         public Task<string> GetArtworkAsync(FullAlbum album) => GetArtworkAsync(album.Images, album.Uri);
@@ -176,7 +213,7 @@ namespace Wox.Plugin.Spotify
 
         public Task<string> GetArtworkAsync(FullTrack track) => GetArtworkAsync(track.Album);
 
-        private Task<string> GetArtworkAsync(List<Image> images, string uri)
+        public Task<string> GetArtworkAsync(List<Image> images, string uri)
         {
             if (!images.Any())
                 return null;
