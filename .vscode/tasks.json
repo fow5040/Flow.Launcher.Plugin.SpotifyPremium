@@ -23,7 +23,7 @@
             "presentation": {
                 "reveal": "silent"
             },
-            "problemMatcher": "$msCompile",
+            "problemMatcher": "$msCompile"
         },
         {
             "label": "build release",

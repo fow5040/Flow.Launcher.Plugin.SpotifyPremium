@@ -16,20 +16,19 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp {track, artist, or album} `` | Search for tracks             |
 | `` sp artist {artist name} ``      | Search for an artist          |
 | `` sp album {album name} ``        | Search for an album           |
+| `` sp playlist {playlist name} ``  | Browse or Search Playlists    |
 | `` sp next ``                      | Play next track               |
 | `` sp last ``                      | Play previous track           |
 | `` sp play ``                      | Resume currently playing track|
 | `` sp pause ``                     | Pause currently playing track |
 | `` sp mute ``                      | Toggle Mute                   |
+| `` sp shuffle ``                   | Toggle Shuffle Mode           |
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
 - To get started:
-    - Restore all NuGet dependencies (nuget restore packages.config -PackagesDirectory .\packages)
-    - Stop Wox
-    - Run build script
-    - Restart Wox
-    - Attach to Wox 
+    - Restore all NuGet dependencies (nuget restore packages.config -PackagesDirectory ..\packages)
+    - Run build script (visual studio code)
 
 ### Third-Party Libraries
 

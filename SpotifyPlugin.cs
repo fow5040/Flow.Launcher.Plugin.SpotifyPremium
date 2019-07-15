@@ -33,6 +33,7 @@ namespace Wox.Plugin.Spotify
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
+            _terms.Add("shuffle", ToggleShuffle);
         }
 
         private List<Result> Play(string arg) =>
@@ -105,7 +106,8 @@ namespace Wox.Plugin.Spotify
                         return true;
                     }
                 },
-                ToggleMute().First()
+                ToggleMute().First(),
+                ToggleShuffle().First()
             };
         }
 
@@ -114,6 +116,13 @@ namespace Wox.Plugin.Spotify
             var toggleAction = _api.IsMuted ? "Unmute" : "Mute";
 
             return SingleResult("Toggle Mute", $"{toggleAction}: {_api.PlaybackContext.Item.Name}", _api.ToggleMute);
+        }
+
+        private List<Result> ToggleShuffle(string arg = null)
+        {
+            var toggleAction = _api.IsShuffled ? "Off" : "On";
+
+            return SingleResult("Toggle Shuffle", $"Turn Shuffle {toggleAction}", _api.ToggleShuffle);
         }
 
         public List<Result> Query(Query query)

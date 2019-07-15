@@ -43,6 +43,13 @@ namespace Wox.Plugin.Spotify
             }
         }
         
+        public bool IsShuffled
+        {
+            get{
+                return PlaybackContext.ShuffleState;
+            }
+        }
+
         public PlaybackContext PlaybackContext {
             get
             {
@@ -106,6 +113,11 @@ namespace Wox.Plugin.Spotify
             {
                 _spotifyApi.SetVolumeAsync(mLastVolume, currentDevice.Id);
             }
+        }
+
+        public void ToggleShuffle()
+        {
+            _spotifyApi.SetShuffleAsync(!IsShuffled);
         }
 
         public async Task ConnectWebApi()
