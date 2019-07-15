@@ -33,6 +33,8 @@ namespace Wox.Plugin.Spotify
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
+            _terms.Add("vol", SetVolume);
+            _terms.Add("volume", SetVolume);
             _terms.Add("shuffle", ToggleShuffle);
         }
 
@@ -54,7 +56,7 @@ namespace Wox.Plugin.Spotify
 
             if (t == null)
             {
-                return SingleResult("No track playing");
+                return SingleResult("No track playing","",()=>{});
             }
 
             var status = _api.PlaybackContext.IsPlaying ? "Now Playing" : "Paused";
@@ -107,7 +109,8 @@ namespace Wox.Plugin.Spotify
                     }
                 },
                 ToggleMute().First(),
-                ToggleShuffle().First()
+                ToggleShuffle().First(),
+                SetVolume().First()
             };
         }
 
@@ -116,6 +119,19 @@ namespace Wox.Plugin.Spotify
             var toggleAction = _api.IsMuted ? "Unmute" : "Mute";
 
             return SingleResult("Toggle Mute", $"{toggleAction}: {_api.PlaybackContext.Item.Name}", _api.ToggleMute);
+        }
+
+        private List<Result> SetVolume(string arg = null)
+        {
+            if (Int32.TryParse(arg, out int tempInt)){
+                if (tempInt >= 0 && tempInt <= 100){
+                    return SingleResult($"Set Volume to {tempInt}",$"Current Volume: {_api.CurrentVolume}", ()=>{
+                        _api.SetVolume(tempInt);
+                        });
+                }
+            }
+
+            return SingleResult($"Volume", $"Current Volume: {_api.CurrentVolume}", ()=>{});
         }
 
         private List<Result> ToggleShuffle(string arg = null)

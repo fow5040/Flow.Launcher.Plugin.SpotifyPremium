@@ -22,6 +22,7 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp play ``                      | Resume currently playing track|
 | `` sp pause ``                     | Pause currently playing track |
 | `` sp mute ``                      | Toggle Mute                   |
+| `` sp volume ``                    | Set Volume (1-100)            |
 | `` sp shuffle ``                   | Toggle Shuffle Mode           |
 
 ### Notice
