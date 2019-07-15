@@ -18,8 +18,7 @@
             "name": ".NET Attach",
             "type": "clr",
             "request": "attach",
-            "processName": "wox.exe",
-            "preLaunchTask": "startWox"
+            "processName": "wox.exe"
         }
     ]
 }
