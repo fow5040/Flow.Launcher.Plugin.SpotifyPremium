@@ -50,6 +50,13 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public int CurrentVolume
+        {
+            get{
+                return PlaybackContext.Device.VolumePercent;
+            }
+        }
+
         public PlaybackContext PlaybackContext {
             get
             {
@@ -113,6 +120,11 @@ namespace Wox.Plugin.Spotify
             {
                 _spotifyApi.SetVolumeAsync(mLastVolume, currentDevice.Id);
             }
+        }
+
+        public void SetVolume(int volumePercent = 0)
+        {
+            _spotifyApi.SetVolumeAsync(volumePercent, PlaybackContext.Device.Id);
         }
 
         public void ToggleShuffle()
