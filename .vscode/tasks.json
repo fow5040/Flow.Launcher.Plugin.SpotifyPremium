@@ -11,6 +11,7 @@
             },
             "dependsOrder": "sequence",
             "dependsOn": [
+                "stopWox", //Add extra stop command to ensure the plugin stops
                 "stopWox",
                 "build debug",
                 "startWox"
