@@ -136,7 +136,7 @@ namespace Wox.Plugin.Spotify
         {
             _securityStore = SecurityStore.Load();
 
-            AuthorizationCodeAuth auth = new AuthorizationCodeAuth("e7a7f5858f1840848ab680ce764778d4", "85e2bdf0e0e2487ca8103229081a0a80", "http://localhost:4002", "http://localhost:4002",
+            AuthorizationCodeAuth auth = new AuthorizationCodeAuth(_securityStore.ClientId, _securityStore.ClientSecret, "http://localhost:4002", "http://localhost:4002",
                Scope.PlaylistReadPrivate | Scope.PlaylistReadCollaborative | Scope.UserReadCurrentlyPlaying | Scope.UserReadPlaybackState | Scope.UserModifyPlaybackState | Scope.Streaming | Scope.UserFollowModify);
 
 

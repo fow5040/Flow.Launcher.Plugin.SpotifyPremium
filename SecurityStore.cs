@@ -12,7 +12,8 @@ namespace Wox.Plugin.Spotify
     {
         public String RefreshToken { get; set; }
         public Boolean HasRefreshToken { get { return !String.IsNullOrEmpty(RefreshToken); } }
-
+        public String ClientSecret { get; set; }
+        public String ClientId {get; set;}
         public static SecurityStore Load()
         {
             if(new FileInfo("security.store").Exists)
