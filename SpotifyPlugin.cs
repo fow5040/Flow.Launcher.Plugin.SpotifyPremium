@@ -51,6 +51,43 @@ namespace Wox.Plugin.Spotify
         private List<Result> PlayLast(string arg) =>
             SingleResult("Last", "Skip Backwards", _api.SkipBack);
 
+        public List<Result> Query(Query query)
+        {
+            if (!_api.ApiConnected)
+            {
+                return SingleResult("Spotify API unreachable", "Select to re-authorize", reconnectAction(_api));
+            }
+
+            if (!_api.TokenValid)
+            {
+                return SingleResult("Spotify API Token Expired", "Select to re-authorize", reconnectAction(_api));
+            }
+
+            try
+            {
+                // display status if no parameters are added
+                if (string.IsNullOrWhiteSpace(query.Search))
+                {
+                    return GetPlaying();
+                }
+
+                if (_terms.ContainsKey(query.FirstSearch))
+                {
+                    var results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
+                    return results;
+                }
+
+                return SearchTrack(query.Search);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            //If searches run into an exception, return results not found Result
+            return NothingFoundResult; 
+        }
+
         private List<Result> GetPlaying()
         {
             var d = _api.ActiveDeviceName;
@@ -145,82 +182,6 @@ namespace Wox.Plugin.Spotify
             var toggleAction = _api.ShuffleStatus ? "Off" : "On";
 
             return SingleResult("Toggle Shuffle", $"Turn Shuffle {toggleAction}", _api.ToggleShuffle);
-        }
-
-        public List<Result> Query(Query query)
-        {
-            if (!_api.ApiConnected)
-            {
-                return SingleResult("Spotify API unreachable", "Select to re-authorize", () =>
-                {
-                    Task connectTask = _api.ConnectWebApi();
-                    //Assign client ID asynchronously when connection finishes
-                    connectTask.ContinueWith((connectResult) => { 
-                        try{
-                            currentUserId = _api.GetUserID();
-                        }
-                        catch{
-                            Console.WriteLine("Failed to write client ID");
-                        }
-                        });
-                    _context.API.ChangeQuery("");
-                });
-            }
-
-            if (!_api.TokenValid)
-            {
-                return SingleResult("Spotify API Token Expired", "Select to re-authorize", () =>
-                {
-                    Task connectTask = _api.ConnectWebApi();
-                    //Assign client ID asynchronously when connection finishes
-                    connectTask.ContinueWith((connectResult) => { 
-                        try{
-                            currentUserId = _api.GetUserID();
-                        }
-                        catch{
-                            Console.WriteLine("Failed to write client ID");
-                        }
-                        });
-                    _context.API.ChangeQuery("");
-                });
-            }
-
-            try
-            {
-                // display status if no parameters are added
-                if (string.IsNullOrWhiteSpace(query.Search))
-                {
-                    return GetPlaying();
-                }
-
-                if (_terms.ContainsKey(query.FirstSearch))
-                {
-                    var results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
-                    return results;
-                }
-
-                return SearchTrack(query.Search);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-
-            return SingleResult("Search failed for some reason.","Is your device connected?",() => {
-                //If the search falls through for auth reasons, it's possible
-                // forcing a reconnect resolves the issue
-                // TODO: Refactor so this fallthrough is no longer necessary!
-                Task connectTask = _api.ConnectWebApi();
-                //Assign client ID asynchronously when connection finishes
-                connectTask.ContinueWith((connectResult) => { 
-                    try{
-                        currentUserId = _api.GetUserID();
-                    }
-                    catch{
-                        Console.WriteLine("Failed to write client ID");
-                    }
-                });
-            });
         }
 
         private List<Result> SearchTrack(string param)
@@ -331,19 +292,7 @@ namespace Wox.Plugin.Spotify
         {
             //Retrieve all available devices
             List<SpotifyAPI.Web.Models.Device> allDevices = _api.GetDevices();
-            if (allDevices == null) return SingleResult("No devices found on Spotify.","Reconnect to API",() => {
-                //TODO: Is this truly informative?
-                Task connectTask = _api.ConnectWebApi();
-                //Assign client ID asynchronously when connection finishes
-                connectTask.ContinueWith((connectResult) => { 
-                    try{
-                        currentUserId = _api.GetUserID();
-                    }
-                    catch{
-                        Console.WriteLine("Failed to write client ID");
-                    }
-                });
-            });
+            if (allDevices == null) return SingleResult("No devices found on Spotify.","Reconnect to API",reconnectAction(_api));
 
             var results = _api.GetDevices().Where( device => !device.IsRestricted).Select(async x => new Result()
             {
@@ -362,14 +311,32 @@ namespace Wox.Plugin.Spotify
             return results.Select(x => x.Result).ToList();
         }
         
-        private List<Result> AuthenticateResult =>
-            SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", () =>
-                {
-                    // This will prompt the user to authenticate
-                    var t = new System.Threading.Thread(async () => await _api.ConnectWebApi());
-                    t.Start();
+        //Return a generic reconnection action
+        private Action reconnectAction(SpotifyApi api){
+            return () =>
+            {
+                Task connectTask = api.ConnectWebApi();
+                //Assign client ID asynchronously when connection finishes
+                connectTask.ContinueWith((connectResult) => { 
+                    try{
+                        currentUserId = api.GetUserID();
+                    }
+                    catch{
+                        Console.WriteLine("Failed to write client ID");
+                    }
                 });
+            };
+        }
 
+        private List<Result> AuthenticateResult =>
+            SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", reconnectAction(_api));
+
+
+
+        // Returns a SingleResult if no search results are found
+        private List<Result> NothingFoundResult =>
+            SingleResult("No results found on Spotify.", "Please try refining your search", () => {});
+            
         // Returns a list with a single result
         private List<Result> SingleResult(string title, string subtitle = "", Action action = default(Action)) =>
             new List<Result>()
