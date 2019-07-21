@@ -96,6 +96,15 @@ namespace Wox.Plugin.Spotify
 
         //public bool IsRunning => SpotifyLocalAPI.IsSpotifyRunning() && SpotifyLocalAPI.IsSpotifyWebHelperRunning();
 
+        public bool TokenValid
+        {
+            get
+            {
+                //Hit a lightweight endpoint to see if the current token is still valid
+                return !_spotifyApi.GetPrivateProfile().HasError();
+            }
+        }
+        
         public void Play()
         {
             _spotifyApi.ResumePlaybackAsync("", "", null, "", 0);

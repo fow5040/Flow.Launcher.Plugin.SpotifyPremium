@@ -174,6 +174,24 @@ namespace Wox.Plugin.Spotify
                 });
             }
 
+            if (!_api.TokenValid)
+            {
+                return SingleResult("Spotify API Token Expired", "Select to re-authorize", () =>
+                {
+                    Task connectTask = _api.ConnectWebApi();
+                    //Assign client ID asynchronously when connection finishes
+                    connectTask.ContinueWith((connectResult) => { 
+                        try{
+                            currentUserId = _api.GetUserID();
+                        }
+                        catch{
+                            Console.WriteLine("Failed to write client ID");
+                        }
+                        });
+                    _context.API.ChangeQuery("");
+                });
+            }
+
             try
             {
                 // display status if no parameters are added
@@ -195,8 +213,10 @@ namespace Wox.Plugin.Spotify
                 Console.WriteLine(e);
             }
 
-            return SingleResult("No results found on Spotify.","Is your device connected?",() => {
-                //TEST force a reconnect
+            return SingleResult("Search failed for some reason.","Is your device connected?",() => {
+                //If the search falls through for auth reasons, it's possible
+                // forcing a reconnect resolves the issue
+                // TODO: Refactor so this fallthrough is no longer necessary!
                 Task connectTask = _api.ConnectWebApi();
                 //Assign client ID asynchronously when connection finishes
                 connectTask.ContinueWith((connectResult) => { 
@@ -207,9 +227,6 @@ namespace Wox.Plugin.Spotify
                         Console.WriteLine("Failed to write client ID");
                     }
                 });
-                //TEST
-                //CONFIRM :: Reconnecting to the API allows us to select a device ID
-                //TODO :: Refactor solution so the reconnection is only required when song searching is failing
             });
         }
 
@@ -322,7 +339,7 @@ namespace Wox.Plugin.Spotify
             //Retrieve all available devices
             List<SpotifyAPI.Web.Models.Device> allDevices = _api.GetDevices();
             if (allDevices == null) return SingleResult("No devices found on Spotify.","Reconnect to API",() => {
-                //TEST force a reconnect
+                //TODO: Is this truly informative?
                 Task connectTask = _api.ConnectWebApi();
                 //Assign client ID asynchronously when connection finishes
                 connectTask.ContinueWith((connectResult) => { 
@@ -333,9 +350,6 @@ namespace Wox.Plugin.Spotify
                         Console.WriteLine("Failed to write client ID");
                     }
                 });
-                //TEST
-                //CONFIRM :: Reconnecting to the API allows us to select a device ID
-                //TODO :: Refactor solution so the reconnection is only required when song searching is failing
             });
 
             var results = _api.GetDevices().Where( device => !device.IsRestricted).Select(async x => new Result()
