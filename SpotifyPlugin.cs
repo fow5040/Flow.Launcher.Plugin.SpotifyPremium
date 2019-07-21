@@ -37,6 +37,13 @@ namespace Wox.Plugin.Spotify
             _terms.Add("volume", SetVolume);
             _terms.Add("device", GetDevices);
             _terms.Add("shuffle", ToggleShuffle);
+            // DO NOT KEEP IN PRODUCTION
+            _terms.Add("DEBUG", DebugFunc);
+        }
+
+        private List<Result> DebugFunc(string arg){
+            // DO NOT KEEP IN PRODUCTION
+            return SingleResult("DO THE DEBUG FUNC","set old refresh token",()=>{_api.DebugFunc();});
         }
 
         private List<Result> Play(string arg) =>
@@ -53,11 +60,16 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> GetPlaying()
         {
-            var t = _api.PlaybackContext.Item;
+            var d = _api.ActiveDeviceName;
+            if (d == null)
+            {
+                return SingleResult("No active device","Select device with `sp device`",()=>{});
+            }
 
+            var t = _api.PlaybackContext.Item;
             if (t == null)
             {
-                return SingleResult("No track playing","",()=>{});
+                return SingleResult("No track playing",$"Active Device: {d}",()=>{});
             }
 
             var status = _api.PlaybackContext.IsPlaying ? "Now Playing" : "Paused";
@@ -117,7 +129,7 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> ToggleMute(string arg = null)
         {
-            var toggleAction = _api.IsMuted ? "Unmute" : "Mute";
+            var toggleAction = _api.MuteStatus ? "Unmute" : "Mute";
 
             return SingleResult("Toggle Mute", $"{toggleAction}: {_api.PlaybackContext.Item.Name}", _api.ToggleMute);
         }
@@ -137,14 +149,14 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> ToggleShuffle(string arg = null)
         {
-            var toggleAction = _api.IsShuffled ? "Off" : "On";
+            var toggleAction = _api.ShuffleStatus ? "Off" : "On";
 
             return SingleResult("Toggle Shuffle", $"Turn Shuffle {toggleAction}", _api.ToggleShuffle);
         }
 
         public List<Result> Query(Query query)
         {
-            if (!_api.IsApiConnected)
+            if (!_api.ApiConnected)
             {
                 return SingleResult("Spotify API unreachable", "Select to re-authorize", () =>
                 {
@@ -203,7 +215,7 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchTrack(string param)
         {
-            if (!_api.IsApiConnected) return AuthenticateResult;
+            if (!_api.ApiConnected) return AuthenticateResult;
 
             if (string.IsNullOrWhiteSpace(param))
             {
@@ -229,7 +241,7 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchAlbum(string param)
         {
-            if (!_api.IsApiConnected) return AuthenticateResult;
+            if (!_api.ApiConnected) return AuthenticateResult;
 
             if (string.IsNullOrWhiteSpace(param))
             {
@@ -255,7 +267,7 @@ namespace Wox.Plugin.Spotify
 
         private List<Result> SearchArtist(string param)
         {
-            if (!_api.IsApiConnected) return AuthenticateResult;
+            if (!_api.ApiConnected) return AuthenticateResult;
 
             if (string.IsNullOrWhiteSpace(param))
             {
@@ -281,7 +293,7 @@ namespace Wox.Plugin.Spotify
         }
         private List<Result> SearchPlaylist(string param)
         {
-            if (!_api.IsApiConnected) return AuthenticateResult;
+            if (!_api.ApiConnected) return AuthenticateResult;
 
             if (string.IsNullOrWhiteSpace(param))
             {
@@ -308,6 +320,24 @@ namespace Wox.Plugin.Spotify
         private List<Result> GetDevices(string param = null)
         {
             //Retrieve all available devices
+            List<SpotifyAPI.Web.Models.Device> allDevices = _api.GetDevices();
+            if (allDevices == null) return SingleResult("No devices found on Spotify.","Reconnect to API",() => {
+                //TEST force a reconnect
+                Task connectTask = _api.ConnectWebApi();
+                //Assign client ID asynchronously when connection finishes
+                connectTask.ContinueWith((connectResult) => { 
+                    try{
+                        currentUserId = _api.GetUserID();
+                    }
+                    catch{
+                        Console.WriteLine("Failed to write client ID");
+                    }
+                });
+                //TEST
+                //CONFIRM :: Reconnecting to the API allows us to select a device ID
+                //TODO :: Refactor solution so the reconnection is only required when song searching is failing
+            });
+
             var results = _api.GetDevices().Where( device => !device.IsRestricted).Select(async x => new Result()
             {
                 Title = $"{x.Type}  {x.Name}",

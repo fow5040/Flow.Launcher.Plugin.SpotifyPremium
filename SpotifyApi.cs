@@ -19,6 +19,12 @@ namespace Wox.Plugin.Spotify
         private int mLastVolume = 10;
         private SecurityStore _securityStore;
 
+        public void DebugFunc(){
+            // DO NOT RELEASE, REMOVE EVENTUALLY
+            _spotifyApi.AccessToken = "BQAmWFmFOMGRRW0gPkPxYuYjpwXYgVRJNXybNBxhVrFiN2BqjWftQSbg8UQqUzIiFsLklD5SgGuO4pmOrSOxIAc3lfN_2Z";
+        }
+
+
         public SpotifyApi(string pluginDir = null)
         {
             var pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
@@ -35,7 +41,7 @@ namespace Wox.Plugin.Spotify
 
         //public bool IsPlaying { get; set; }
 
-        public bool IsMuted
+        public bool MuteStatus
         {
             get
             {
@@ -43,7 +49,7 @@ namespace Wox.Plugin.Spotify
             }
         }
         
-        public bool IsShuffled
+        public bool ShuffleStatus
         {
             get{
                 return PlaybackContext.ShuffleState;
@@ -64,11 +70,23 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public String ActiveDeviceName{
+            get
+            {
+                //Returns null, or active device string
+                AvailabeDevices allDevices = _spotifyApi.GetDevices();
+                if (allDevices.Devices == null) return null;
+                
+                Device ActiveDevice = allDevices.Devices.FindLast( device => device.IsActive);
+                return (ActiveDevice != null) ? ActiveDevice.Name : null;
+            }
+        }
+
         private string CacheFolder { get; }
 
         //public bool IsConnected { get; private set; }
 
-        public bool IsApiConnected
+        public bool ApiConnected
         {
             get
             {
@@ -129,7 +147,7 @@ namespace Wox.Plugin.Spotify
 
         public void ToggleShuffle()
         {
-            _spotifyApi.SetShuffleAsync(!IsShuffled);
+            _spotifyApi.SetShuffleAsync(!ShuffleStatus);
         }
 
         public async Task ConnectWebApi()
