@@ -35,7 +35,7 @@ namespace Wox.Plugin.Spotify
 
         //public bool IsPlaying { get; set; }
 
-        public bool IsMuted
+        public bool MuteStatus
         {
             get
             {
@@ -43,7 +43,7 @@ namespace Wox.Plugin.Spotify
             }
         }
         
-        public bool IsShuffled
+        public bool ShuffleStatus
         {
             get{
                 return PlaybackContext.ShuffleState;
@@ -64,11 +64,23 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public String ActiveDeviceName{
+            get
+            {
+                //Returns null, or active device string
+                AvailabeDevices allDevices = _spotifyApi.GetDevices();
+                if (allDevices.Devices == null) return null;
+                
+                Device ActiveDevice = allDevices.Devices.FindLast( device => device.IsActive);
+                return (ActiveDevice != null) ? ActiveDevice.Name : null;
+            }
+        }
+
         private string CacheFolder { get; }
 
         //public bool IsConnected { get; private set; }
 
-        public bool IsApiConnected
+        public bool ApiConnected
         {
             get
             {
@@ -78,6 +90,15 @@ namespace Wox.Plugin.Spotify
 
         //public bool IsRunning => SpotifyLocalAPI.IsSpotifyRunning() && SpotifyLocalAPI.IsSpotifyWebHelperRunning();
 
+        public bool TokenValid
+        {
+            get
+            {
+                //Hit a lightweight endpoint to see if the current token is still valid
+                return !_spotifyApi.GetPrivateProfile().HasError();
+            }
+        }
+        
         public void Play()
         {
             _spotifyApi.ResumePlaybackAsync("", "", null, "", 0);
@@ -129,7 +150,7 @@ namespace Wox.Plugin.Spotify
 
         public void ToggleShuffle()
         {
-            _spotifyApi.SetShuffleAsync(!IsShuffled);
+            _spotifyApi.SetShuffleAsync(!ShuffleStatus);
         }
 
         public async Task ConnectWebApi()
@@ -215,6 +236,19 @@ namespace Wox.Plugin.Spotify
 
                 return returnedPlaylists.Concat(returnedFeaturedPlaylists);
             }
+        }
+
+        public List<Device> GetDevices()
+        {
+            lock (_lock)
+            {
+                return _spotifyApi.GetDevices().Devices;
+            }
+        }
+
+        public void SetDevice(string deviceId = "")
+        {
+            _spotifyApi.TransferPlayback(new List<string>{deviceId}, false);
         }
 
         public Task<string> GetArtworkAsync(SimpleAlbum album) => GetArtworkAsync(album.Images, album.Uri);
