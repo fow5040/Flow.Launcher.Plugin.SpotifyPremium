@@ -37,13 +37,6 @@ namespace Wox.Plugin.Spotify
             _terms.Add("volume", SetVolume);
             _terms.Add("device", GetDevices);
             _terms.Add("shuffle", ToggleShuffle);
-            // DO NOT KEEP IN PRODUCTION
-            _terms.Add("DEBUG", DebugFunc);
-        }
-
-        private List<Result> DebugFunc(string arg){
-            // DO NOT KEEP IN PRODUCTION
-            return SingleResult("DO THE DEBUG FUNC","set old refresh token",()=>{_api.DebugFunc();});
         }
 
         private List<Result> Play(string arg) =>

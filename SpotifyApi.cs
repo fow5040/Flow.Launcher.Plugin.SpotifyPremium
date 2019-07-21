@@ -19,12 +19,6 @@ namespace Wox.Plugin.Spotify
         private int mLastVolume = 10;
         private SecurityStore _securityStore;
 
-        public void DebugFunc(){
-            // DO NOT RELEASE, REMOVE EVENTUALLY
-            _spotifyApi.AccessToken = "BQAmWFmFOMGRRW0gPkPxYuYjpwXYgVRJNXybNBxhVrFiN2BqjWftQSbg8UQqUzIiFsLklD5SgGuO4pmOrSOxIAc3lfN_2Z";
-        }
-
-
         public SpotifyApi(string pluginDir = null)
         {
             var pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
