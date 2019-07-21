@@ -29,10 +29,12 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
 - **You _NEED_ a client secret and client ID to use this plugin!**
-    - Create a file called security.store in _%localAppData%\Wox\app-1.3.578\security.store_ with the following format:
+    - This app currently hardcodes my personal Client ID and Client Secret to interact with Spotify. If current app usage hits any API limits, naturally you will need to switch out the current Client ID and Secret
+    - To use a custom ID/Secret, create a file called security.store in _%localAppData%\Wox\app-1.3.578\security.store_ with the following format:
     ```
     {"ClientID":"yourClientSecret","ClientSecret":"yourClientSecret"}
     ```
+    - To generate a key pair, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
 - To get started:
     - Restore all NuGet dependencies (nuget restore packages.config -PackagesDirectory ..\packages)
     - Run build script (visual studio code)
@@ -47,5 +49,7 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 - Better solution to [#6](https://github.com/JohnTheGr8/Wox.Plugin.Spotify/issues/6)
 - Search user content (playlists, saved music)
 - Configurable default search type (now track search is default, album/playlist search might be more suitable to some)
-- User Configuration (#1)
+    - Potentially, change default search type to generic search
+- Add configuration menu
+- Improve device management workflow
 - Clear Cache folder
