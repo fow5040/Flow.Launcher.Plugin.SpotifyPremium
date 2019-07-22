@@ -77,7 +77,7 @@ namespace Wox.Plugin.Spotify
                     return results;
                 }
 
-                return SearchTrack(query.Search);
+                return SearchAll(query.Search);
             }
             catch (Exception e)
             {
@@ -184,6 +184,32 @@ namespace Wox.Plugin.Spotify
             return SingleResult("Toggle Shuffle", $"Turn Shuffle {toggleAction}", _api.ToggleShuffle);
         }
 
+        private List<Result> SearchAll(string param)
+        {
+            if (!_api.ApiConnected) return AuthenticateResult;
+
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                return new List<Result>();
+            }
+
+            // Retrieve data and return the first 20 results
+            var results = _api.SearchAll(param).Select(async x => new Result()
+            {
+                Title = x.Title,
+                SubTitle = x.Subtitle,
+                IcoPath = await _api.GetArtworkAsync(x),
+                Action = _ =>
+                {
+                    _api.Play(x.Uri);
+                    return true;
+                }
+            }).ToArray();
+
+            Task.WaitAll(results);
+            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+        }
+
         private List<Result> SearchTrack(string param)
         {
             if (!_api.ApiConnected) return AuthenticateResult;
@@ -207,7 +233,7 @@ namespace Wox.Plugin.Spotify
             }).ToArray();
 
             Task.WaitAll(results);
-            return results.Select(x => x.Result).ToList();
+            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
         private List<Result> SearchAlbum(string param)
@@ -233,7 +259,7 @@ namespace Wox.Plugin.Spotify
             }).ToArray();
 
             Task.WaitAll(results);
-            return results.Select(x => x.Result).ToList();
+            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
         private List<Result> SearchArtist(string param)
@@ -260,7 +286,7 @@ namespace Wox.Plugin.Spotify
             }).ToArray();
 
             Task.WaitAll(results);
-            return results.Select(x => x.Result).ToList();
+            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
         private List<Result> SearchPlaylist(string param)
         {
@@ -276,7 +302,7 @@ namespace Wox.Plugin.Spotify
             {
                 Title = x.Name,
                 SubTitle = x.Type,
-                IcoPath = await _api.GetArtworkAsync(x.Images,x.Uri),
+                IcoPath = await _api.GetArtworkAsync(x),
                 Action = _ =>
                 {
                     _api.Play(x.Uri);
@@ -285,7 +311,7 @@ namespace Wox.Plugin.Spotify
             }).ToArray();
 
             Task.WaitAll(results);
-            return results.Select(x => x.Result).ToList();
+            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
         private List<Result> GetDevices(string param = null)
@@ -353,5 +379,7 @@ namespace Wox.Plugin.Spotify
                     }
                 }
             };
+        
+        
     }
 }

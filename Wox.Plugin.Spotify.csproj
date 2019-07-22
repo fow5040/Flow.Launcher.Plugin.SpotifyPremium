@@ -58,6 +58,7 @@
     <Compile Include="SecurityStore.cs" />
     <Compile Include="SpotifyApi.cs" />
     <Compile Include="SpotifyPlugin.cs" />
+    <Compile Include="SpotifySearchResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

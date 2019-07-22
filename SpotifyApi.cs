@@ -238,6 +238,59 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public IEnumerable<SpotifySearchResult> SearchAll(string s)
+        {
+            lock (_lock)
+            {
+                string q = s.Replace(' ','+');
+                SearchItem searchResults = _spotifyApi.SearchItems(q,SearchType.All,3);
+                List<SpotifySearchResult> returnResults = new List<SpotifySearchResult>(); 
+
+                returnResults.AddRange(searchResults.Albums.Items.Select(x => new SpotifySearchResult()
+                {
+                    Title = $"Album: {x.Name}",
+                    Subtitle = "Album by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                    Id = x.Id,
+                    Name = x.Name,
+                    Uri = x.Uri,
+                    Images = x.Images
+                }).ToList());
+
+                returnResults.AddRange(searchResults.Artists.Items.Select( x => new SpotifySearchResult()
+                {
+                    Title = $"Artist Radio: {x.Name}",
+                    Subtitle = $"Artist Popularity: {x.Popularity}",
+                    Id = x.Id,
+                    Name = x.Name,
+                    Uri = x.Uri,
+                    Images = x.Images
+                }).ToList());
+
+                returnResults.AddRange(searchResults.Tracks.Items.Select( x => new SpotifySearchResult()
+                {
+                    Title = $"Track: {x.Name}",
+                    Subtitle = $"In album {x.Album.Name}, by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                    Id = x.Id,
+                    Name = x.Name,
+                    Uri = x.Uri,
+                    Images = x.Album.Images
+                }).ToList());
+
+                returnResults.AddRange(searchResults.Playlists.Items.Select( x => new SpotifySearchResult()
+                {
+                    Title = $"Playlist: {x.Name}",
+                    Subtitle = $"Playlist by: {x.Owner.DisplayName} | {x.Tracks.Total} songs",
+                    Id = x.Id,
+                    Name = x.Name,
+                    Uri = x.Uri,
+                    Images = x.Images
+                }).ToList());
+
+                return returnResults;
+
+            }
+        }
+
         public List<Device> GetDevices()
         {
             lock (_lock)
@@ -258,6 +311,10 @@ namespace Wox.Plugin.Spotify
         public Task<string> GetArtworkAsync(FullArtist artist) => GetArtworkAsync(artist.Images, artist.Uri);
 
         public Task<string> GetArtworkAsync(FullTrack track) => GetArtworkAsync(track.Album);
+
+        public Task<string> GetArtworkAsync(SimplePlaylist playlist) => GetArtworkAsync(playlist.Images,playlist.Uri);
+
+        public Task<string> GetArtworkAsync(SpotifySearchResult searchResult) => GetArtworkAsync(searchResult.Images,searchResult.Uri);
 
         public Task<string> GetArtworkAsync(List<Image> images, string uri)
         {
