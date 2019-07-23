@@ -17,9 +17,14 @@ namespace Wox.Plugin.Spotify
 
         private string currentUserId; //Required for playlist querying
 
+        private bool optimizeApiUsage = true; //Flag to limit API calls to X ms after a keystroke 
+
+        private DateTime lastQueryTime;
+
         public void Init(PluginInitContext context)
         {
             _context = context;
+            lastQueryTime = DateTime.UtcNow;
 
             // initialize data, passing it the plugin directory
             Task.Run(() => _api = new SpotifyApi(_context.CurrentPluginMetadata.PluginDirectory));
@@ -37,6 +42,12 @@ namespace Wox.Plugin.Spotify
             _terms.Add("volume", SetVolume);
             _terms.Add("device", GetDevices);
             _terms.Add("shuffle", ToggleShuffle);
+
+            //TEMP - view query count and average query duration
+            _terms.Add("diag", q =>
+                SingleResult($"Query Count: {context.CurrentPluginMetadata.QueryCount}",
+                $"Avg. Query Time: {context.CurrentPluginMetadata.AvgQueryTime}ms",
+                null));
         }
 
         private List<Result> Play(string arg) =>
@@ -53,6 +64,9 @@ namespace Wox.Plugin.Spotify
 
         public List<Result> Query(Query query)
         {
+            lastQueryTime = DateTime.UtcNow;
+            DateTime thisQueryStartTime = DateTime.UtcNow;
+
             if (!_api.ApiConnected)
             {
                 return SingleResult("Spotify API unreachable", "Select to re-authorize", reconnectAction(_api));
@@ -69,6 +83,15 @@ namespace Wox.Plugin.Spotify
                 if (string.IsNullOrWhiteSpace(query.Search))
                 {
                     return GetPlaying();
+                }
+                
+                //If optimizeApiUsage is flagged
+                //  return null if query is updated within 500 ms
+                if(optimizeApiUsage){
+                    System.Threading.Thread.Sleep(500);
+                    if(lastQueryTime > thisQueryStartTime){
+                        return null;
+                    }
                 }
 
                 if (_terms.ContainsKey(query.FirstSearch))
@@ -378,8 +401,6 @@ namespace Wox.Plugin.Spotify
                         return true;
                     }
                 }
-            };
-        
-        
+            }; 
     }
 }
