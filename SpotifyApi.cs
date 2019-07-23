@@ -242,49 +242,57 @@ namespace Wox.Plugin.Spotify
         {
             lock (_lock)
             {
-                string q = s.Replace(' ','+');
+                string q = String.Concat(s.Replace(' ','+'),"*");
                 SearchItem searchResults = _spotifyApi.SearchItems(q,SearchType.All,3);
                 List<SpotifySearchResult> returnResults = new List<SpotifySearchResult>(); 
 
-                returnResults.AddRange(searchResults.Albums.Items.Select(x => new SpotifySearchResult()
-                {
-                    Title = $"Album: {x.Name}",
-                    Subtitle = "Album by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
-                    Id = x.Id,
-                    Name = x.Name,
-                    Uri = x.Uri,
-                    Images = x.Images
-                }).ToList());
+                if(searchResults.Albums.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Albums.Items.Select(x => new SpotifySearchResult()
+                    {
+                        Title = $"Album  :  {x.Name}",
+                        Subtitle = "Album by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Images
+                    }).ToList());
+                }
 
-                returnResults.AddRange(searchResults.Artists.Items.Select( x => new SpotifySearchResult()
-                {
-                    Title = $"Artist Radio: {x.Name}",
-                    Subtitle = $"Artist Popularity: {x.Popularity}",
-                    Id = x.Id,
-                    Name = x.Name,
-                    Uri = x.Uri,
-                    Images = x.Images
-                }).ToList());
+                if(searchResults.Artists.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Artists.Items.Select( x => new SpotifySearchResult()
+                    {
+                        Title = $"Artist  :  {x.Name}",
+                        Subtitle = $"Play Artist Radio: {x.Name}",
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Images
+                    }).ToList());
+                }
 
-                returnResults.AddRange(searchResults.Tracks.Items.Select( x => new SpotifySearchResult()
-                {
-                    Title = $"Track: {x.Name}",
-                    Subtitle = $"In album {x.Album.Name}, by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
-                    Id = x.Id,
-                    Name = x.Name,
-                    Uri = x.Uri,
-                    Images = x.Album.Images
-                }).ToList());
+                if(searchResults.Tracks.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Tracks.Items.Select( x => new SpotifySearchResult()
+                    {
+                        Title = $"Track  :  {x.Name}",
+                        Subtitle = $"Album: {x.Album.Name}, by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Album.Images
+                    }).ToList());
+                }
 
-                returnResults.AddRange(searchResults.Playlists.Items.Select( x => new SpotifySearchResult()
-                {
-                    Title = $"Playlist: {x.Name}",
-                    Subtitle = $"Playlist by: {x.Owner.DisplayName} | {x.Tracks.Total} songs",
-                    Id = x.Id,
-                    Name = x.Name,
-                    Uri = x.Uri,
-                    Images = x.Images
-                }).ToList());
+                if(searchResults.Playlists.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Playlists.Items.Select( x => new SpotifySearchResult()
+                    {
+                        Title = $"Playlist :  {x.Name}",
+                        Subtitle = $"Playlist by: {x.Owner.DisplayName} | {x.Tracks.Total} songs",
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Images
+                    }).ToList());
+                }
 
                 return returnResults;
 
