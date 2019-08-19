@@ -15,11 +15,11 @@ namespace Wox.Plugin.Spotify
         public String ClientSecret { get; set;}
         public String ClientId {get; set;}
 
-        public static SecurityStore Load()
+        public static SecurityStore Load(string pluginDir = null)
         {
-            if(new FileInfo("security.store").Exists)
+            if(new FileInfo(pluginDir+"security.store").Exists)
             {
-                return JsonConvert.DeserializeObject<SecurityStore>(File.ReadAllText("security.store"));
+                return JsonConvert.DeserializeObject<SecurityStore>(File.ReadAllText(pluginDir+"\\security.store"));
             }
             //Including personal ClientID and Secret
             //May remove if potential App/API usage gets out of hand
@@ -29,9 +29,9 @@ namespace Wox.Plugin.Spotify
             return _securityStore;
         }
 
-        public void Save()
+        public void Save(string pluginDir = null)
         {
-            File.WriteAllText("security.store", JsonConvert.SerializeObject(this));
+            File.WriteAllText(pluginDir+"\\security.store", JsonConvert.SerializeObject(this));
         }
     }
 }

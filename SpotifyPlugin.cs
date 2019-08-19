@@ -21,6 +21,11 @@ namespace Wox.Plugin.Spotify
 
         private DateTime lastQueryTime;
 
+        private int cachedVolume = -1;
+
+        //Specify expensive search terms for optimizing api usage
+        private String[] expensiveSearchTerms = {"artist","album","track","playlist"}; 
+
         public void Init(PluginInitContext context)
         {
             _context = context;
@@ -48,6 +53,10 @@ namespace Wox.Plugin.Spotify
                 SingleResult($"Query Count: {context.CurrentPluginMetadata.QueryCount}",
                 $"Avg. Query Time: {context.CurrentPluginMetadata.AvgQueryTime}ms",
                 null));
+
+            _terms.Add("reconnect", q =>
+                SingleResult("Reconnect","Force a reconnection",reconnectAction(_api))
+                );
         }
 
         private List<Result> Play(string arg) =>
@@ -85,6 +94,11 @@ namespace Wox.Plugin.Spotify
                     return GetPlaying();
                 }
                 
+                if(_terms.ContainsKey(query.FirstSearch) && !expensiveSearchTerms.Contains(query.FirstSearch)){
+                    var results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
+                    return results;                    
+                }
+
                 //If optimizeApiUsage is flagged
                 //  return null if query is updated within 500 ms
                 if(optimizeApiUsage){
@@ -191,13 +205,14 @@ namespace Wox.Plugin.Spotify
         {
             if (Int32.TryParse(arg, out int tempInt)){
                 if (tempInt >= 0 && tempInt <= 100){
-                    return SingleResult($"Set Volume to {tempInt}",$"Current Volume: {_api.CurrentVolume}", ()=>{
+                    return SingleResult($"Set Volume to {tempInt}",$"Current Volume: {cachedVolume}", ()=>{
                         _api.SetVolume(tempInt);
                         });
                 }
             }
 
-            return SingleResult($"Volume", $"Current Volume: {_api.CurrentVolume}", ()=>{});
+            cachedVolume = _api.CurrentVolume;
+            return SingleResult($"Volume", $"Current Volume: {cachedVolume}", ()=>{});
         }
 
         private List<Result> ToggleShuffle(string arg = null)
@@ -341,7 +356,7 @@ namespace Wox.Plugin.Spotify
         {
             //Retrieve all available devices
             List<SpotifyAPI.Web.Models.Device> allDevices = _api.GetDevices();
-            if (allDevices == null) return SingleResult("No devices found on Spotify.","Reconnect to API",reconnectAction(_api));
+            if (allDevices == null || allDevices.Count == 0) return SingleResult("No devices found on Spotify.","Reconnect to API",reconnectAction(_api));
 
             var results = _api.GetDevices().Where( device => !device.IsRestricted).Select(async x => new Result()
             {

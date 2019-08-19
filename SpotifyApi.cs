@@ -18,10 +18,11 @@ namespace Wox.Plugin.Spotify
         private readonly object _lock = new object();
         private int mLastVolume = 10;
         private SecurityStore _securityStore;
+        private string pluginDirectory;
 
         public SpotifyApi(string pluginDir = null)
         {
-            var pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
+            pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
             CacheFolder = Path.Combine(pluginDirectory, "Cache");
 
             // Create the cache folder, if it doesn't already exist
@@ -155,7 +156,7 @@ namespace Wox.Plugin.Spotify
 
         public async Task ConnectWebApi()
         {
-            _securityStore = SecurityStore.Load();
+            _securityStore = SecurityStore.Load(pluginDirectory);
 
             AuthorizationCodeAuth auth = new AuthorizationCodeAuth(_securityStore.ClientId, _securityStore.ClientSecret, "http://localhost:4002", "http://localhost:4002",
                Scope.PlaylistReadPrivate | Scope.PlaylistReadCollaborative | Scope.UserReadCurrentlyPlaying | Scope.UserReadPlaybackState | Scope.UserModifyPlaybackState | Scope.Streaming | Scope.UserFollowModify);
@@ -173,7 +174,7 @@ namespace Wox.Plugin.Spotify
                     auth.Stop();
                     Token token = await auth.ExchangeCode(payload.Code);
                     _securityStore.RefreshToken = token.RefreshToken;
-                    _securityStore.Save();
+                    _securityStore.Save(pluginDirectory);
                     _spotifyApi = new SpotifyWebAPI() { TokenType = token.TokenType, AccessToken = token.AccessToken };
                 };
                 auth.Start();
