@@ -17,7 +17,7 @@ namespace Wox.Plugin.Spotify
 
         public static SecurityStore Load(string pluginDir = null)
         {
-            if(new FileInfo(pluginDir+"security.store").Exists)
+            if(new FileInfo(pluginDir+"\\security.store").Exists)
             {
                 return JsonConvert.DeserializeObject<SecurityStore>(File.ReadAllText(pluginDir+"\\security.store"));
             }
