@@ -13,10 +13,11 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | Keyword                            | Description                   |
 | ---------------------------------- | ----------------------------- |
 | `` sp ``                           | Show currently playing track  |
-| `` sp {track, artist, or album} `` | Search for tracks             |
+| `` sp {spotify search query} ``    | Search all of Spotify         |
+| `` sp track {track name} ``        | Search for a track            |
 | `` sp artist {artist name} ``      | Search for an artist          |
 | `` sp album {album name} ``        | Search for an album           |
-| `` sp playlist {playlist name} ``  | Browse or Search Playlists    |
+| `` sp playlist {playlist name} ``  | Search personal playlists     |
 | `` sp next ``                      | Play next track               |
 | `` sp last ``                      | Play previous track           |
 | `` sp play ``                      | Resume currently playing track|
@@ -25,6 +26,7 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp volume ``                    | Set Volume (1-100)            |
 | `` sp device ``                    | Set Active Device             |
 | `` sp shuffle ``                   | Toggle Shuffle Mode           |
+| `` sp reconnect ``                 | Force a full reconnection     |
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin

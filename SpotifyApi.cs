@@ -18,10 +18,11 @@ namespace Wox.Plugin.Spotify
         private readonly object _lock = new object();
         private int mLastVolume = 10;
         private SecurityStore _securityStore;
+        private string pluginDirectory;
 
         public SpotifyApi(string pluginDir = null)
         {
-            var pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
+            pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
             CacheFolder = Path.Combine(pluginDirectory, "Cache");
 
             // Create the cache folder, if it doesn't already exist
@@ -98,7 +99,7 @@ namespace Wox.Plugin.Spotify
                 return !_spotifyApi.GetPrivateProfile().HasError();
             }
         }
-        
+
         public void Play()
         {
             _spotifyApi.ResumePlaybackAsync("", "", null, "", 0);
@@ -153,15 +154,15 @@ namespace Wox.Plugin.Spotify
             _spotifyApi.SetShuffleAsync(!ShuffleStatus);
         }
 
-        public async Task ConnectWebApi()
+        public async Task ConnectWebApi(bool keepRefreshToken = true)
         {
-            _securityStore = SecurityStore.Load();
+            _securityStore = SecurityStore.Load(pluginDirectory);
 
             AuthorizationCodeAuth auth = new AuthorizationCodeAuth(_securityStore.ClientId, _securityStore.ClientSecret, "http://localhost:4002", "http://localhost:4002",
                Scope.PlaylistReadPrivate | Scope.PlaylistReadCollaborative | Scope.UserReadCurrentlyPlaying | Scope.UserReadPlaybackState | Scope.UserModifyPlaybackState | Scope.Streaming | Scope.UserFollowModify);
 
 
-            if (_securityStore.HasRefreshToken)
+            if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
                 Token token = await auth.RefreshToken(_securityStore.RefreshToken);
                 _spotifyApi = new SpotifyWebAPI() { TokenType = token.TokenType, AccessToken = token.AccessToken };
@@ -173,7 +174,7 @@ namespace Wox.Plugin.Spotify
                     auth.Stop();
                     Token token = await auth.ExchangeCode(payload.Code);
                     _securityStore.RefreshToken = token.RefreshToken;
-                    _securityStore.Save();
+                    _securityStore.Save(pluginDirectory);
                     _spotifyApi = new SpotifyWebAPI() { TokenType = token.TokenType, AccessToken = token.AccessToken };
                 };
                 auth.Start();
@@ -238,6 +239,67 @@ namespace Wox.Plugin.Spotify
             }
         }
 
+        public IEnumerable<SpotifySearchResult> SearchAll(string s)
+        {
+            lock (_lock)
+            {
+                string q = String.Concat(s.Replace(' ','+'),"*");
+                SearchItem searchResults = _spotifyApi.SearchItems(q,SearchType.All,3);
+                List<SpotifySearchResult> returnResults = new List<SpotifySearchResult>(); 
+
+                if(searchResults.Albums.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Albums.Items.Select(x => new SpotifySearchResult()
+                    {
+                        Title = $"Album  :  {x.Name}",
+                        Subtitle = "Album by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Images
+                    }).ToList());
+                }
+
+                if(searchResults.Artists.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Artists.Items.Select( x => new SpotifySearchResult()
+                    {
+                        Title = $"Artist  :  {x.Name}",
+                        Subtitle = $"Play Artist Radio: {x.Name}",
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Images
+                    }).ToList());
+                }
+
+                if(searchResults.Tracks.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Tracks.Items.Select( x => new SpotifySearchResult()
+                    {
+                        Title = $"Track  :  {x.Name}",
+                        Subtitle = $"Album: {x.Album.Name}, by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Album.Images
+                    }).ToList());
+                }
+
+                if(searchResults.Playlists.Items.Count() > 0){
+                    returnResults.AddRange(searchResults.Playlists.Items.Select( x => new SpotifySearchResult()
+                    {
+                        Title = $"Playlist :  {x.Name}",
+                        Subtitle = $"Playlist by: {x.Owner.DisplayName} | {x.Tracks.Total} songs",
+                        Id = x.Id,
+                        Name = x.Name,
+                        Uri = x.Uri,
+                        Images = x.Images
+                    }).ToList());
+                }
+
+                return returnResults;
+
+            }
+        }
+
         public List<Device> GetDevices()
         {
             lock (_lock)
@@ -258,6 +320,10 @@ namespace Wox.Plugin.Spotify
         public Task<string> GetArtworkAsync(FullArtist artist) => GetArtworkAsync(artist.Images, artist.Uri);
 
         public Task<string> GetArtworkAsync(FullTrack track) => GetArtworkAsync(track.Album);
+
+        public Task<string> GetArtworkAsync(SimplePlaylist playlist) => GetArtworkAsync(playlist.Images,playlist.Uri);
+
+        public Task<string> GetArtworkAsync(SpotifySearchResult searchResult) => GetArtworkAsync(searchResult.Images,searchResult.Uri);
 
         public Task<string> GetArtworkAsync(List<Image> images, string uri)
         {
