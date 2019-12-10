@@ -52,7 +52,7 @@ namespace Wox.Plugin.SpotifyPremium
             _terms.Add("device", GetDevices);
             _terms.Add("shuffle", ToggleShuffle);
 
-            //TEMP - view query count and average query duration
+            //view query count and average query duration
             _terms.Add("diag", q =>
                 SingleResult($"Query Count: {context.CurrentPluginMetadata.QueryCount}",
                 $"Avg. Query Time: {context.CurrentPluginMetadata.AvgQueryTime}ms",

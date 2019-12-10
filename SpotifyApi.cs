@@ -13,7 +13,6 @@ namespace Wox.Plugin.SpotifyPremium
 {
     public class SpotifyApi
     {
-        //private readonly SpotifyLocalAPI _localSpotify;
         private SpotifyWebAPI _spotifyApi;
         private readonly object _lock = new object();
         private int mLastVolume = 10;
@@ -29,12 +28,7 @@ namespace Wox.Plugin.SpotifyPremium
             if (!Directory.Exists(CacheFolder))
                 Directory.CreateDirectory(CacheFolder);
 
-            /*_localSpotify = new SpotifyLocalAPI();
-            _localSpotify.OnTrackChange += (o, e) => CurrentTrack = e.NewTrack;
-            _localSpotify.OnPlayStateChange += (o, e) => IsPlaying = e.Playing;*/
         }
-
-        //public bool IsPlaying { get; set; }
 
         public bool MuteStatus
         {
@@ -79,8 +73,6 @@ namespace Wox.Plugin.SpotifyPremium
 
         private string CacheFolder { get; }
 
-        //public bool IsConnected { get; private set; }
-
         public bool ApiConnected
         {
             get
@@ -88,8 +80,6 @@ namespace Wox.Plugin.SpotifyPremium
                 return _spotifyApi != null;
             }
         }
-
-        //public bool IsRunning => SpotifyLocalAPI.IsSpotifyRunning() && SpotifyLocalAPI.IsSpotifyWebHelperRunning();
 
         public bool TokenValid
         {
@@ -345,33 +335,6 @@ namespace Wox.Plugin.SpotifyPremium
 
         private static string GetUniqueIdForArtwork(string uri) => uri.Substring(uri.LastIndexOf(":", StringComparison.Ordinal) + 1);
 
-        /*public void ConnectToSpotify()
-        {
-            if (!IsRunning)
-            {
-                return;
-            }
-            
-            var successful = _localSpotify.Connect();
-            if (successful)
-            {
-                UpdateInfos();
-                _localSpotify.ListenForEvents = true;
-            }
-        }*/
-
-        /*private void UpdateInfos()
-        {
-            var status = _localSpotify.GetStatus();
-
-            if (status?.Track != null) //Update track infos
-            {
-                CurrentTrack = status.Track;
-                IsPlaying = status.Playing;
-                IsConnected = true;
-            }
-        }*/
-        
         private async Task<string> DownloadImageAsync(string uniqueId, string url)
         {
             // local path to the image file, located in the Cache folder
