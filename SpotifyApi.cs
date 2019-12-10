@@ -9,7 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Wox.Plugin.Spotify
+namespace Wox.Plugin.SpotifyPremium
 {
     public class SpotifyApi
     {
