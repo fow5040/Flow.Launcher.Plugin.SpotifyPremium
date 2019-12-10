@@ -26,6 +26,7 @@ Control your Spotify client from Wox. Search for tracks, artists, or albums and 
 | `` sp volume ``                    | Set Volume (1-100)            |
 | `` sp device ``                    | Set Active Device             |
 | `` sp shuffle ``                   | Toggle Shuffle Mode           |
+| `` sp reconnect ``                 | Force a full reconnection     |
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin

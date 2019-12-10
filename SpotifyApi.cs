@@ -99,7 +99,7 @@ namespace Wox.Plugin.Spotify
                 return !_spotifyApi.GetPrivateProfile().HasError();
             }
         }
-        
+
         public void Play()
         {
             _spotifyApi.ResumePlaybackAsync("", "", null, "", 0);
@@ -154,7 +154,7 @@ namespace Wox.Plugin.Spotify
             _spotifyApi.SetShuffleAsync(!ShuffleStatus);
         }
 
-        public async Task ConnectWebApi()
+        public async Task ConnectWebApi(bool keepRefreshToken = true)
         {
             _securityStore = SecurityStore.Load(pluginDirectory);
 
@@ -162,7 +162,7 @@ namespace Wox.Plugin.Spotify
                Scope.PlaylistReadPrivate | Scope.PlaylistReadCollaborative | Scope.UserReadCurrentlyPlaying | Scope.UserReadPlaybackState | Scope.UserModifyPlaybackState | Scope.Streaming | Scope.UserFollowModify);
 
 
-            if (_securityStore.HasRefreshToken)
+            if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
                 Token token = await auth.RefreshToken(_securityStore.RefreshToken);
                 _spotifyApi = new SpotifyWebAPI() { TokenType = token.TokenType, AccessToken = token.AccessToken };

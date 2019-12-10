@@ -17,14 +17,18 @@ namespace Wox.Plugin.Spotify
 
         private string currentUserId; //Required for playlist querying
 
-        private bool optimizeApiUsage = true; //Flag to limit API calls to X ms after a keystroke 
+        private bool optimizeApiUsage = true;   //Flag to limit API calls to X ms after a keystroke 
+                                                //Set to 'false' to stop optimizing APi calls
 
-        private DateTime lastQueryTime;
+        private DateTime lastQueryTime; //Record the time on every query
+                                        //Almost every keypress counts as a new query
 
+        private int optimzeApiKeyDelay = 500; //Time to wait before issuing an expensive query
         private int cachedVolume = -1;
 
-        //Specify expensive search terms for optimizing api usage
-        private String[] expensiveSearchTerms = {"artist","album","track","playlist"}; 
+        
+        private String[] expensiveSearchTerms = {"artist","album","track","playlist"};  //Specify expensive search terms for optimizing api usage
+                                                                                        //Wait for delay before querying 
 
         public void Init(PluginInitContext context)
         {
@@ -55,7 +59,7 @@ namespace Wox.Plugin.Spotify
                 null));
 
             _terms.Add("reconnect", q =>
-                SingleResult("Reconnect","Force a reconnection",reconnectAction(_api))
+                SingleResult("Reconnect","Force a reconnection and remove the refresh token",reconnectAction(_api, false))
                 );
         }
 
@@ -73,6 +77,7 @@ namespace Wox.Plugin.Spotify
 
         public List<Result> Query(Query query)
         {
+            //Record the time the query was issued
             lastQueryTime = DateTime.UtcNow;
             DateTime thisQueryStartTime = DateTime.UtcNow;
 
@@ -94,15 +99,18 @@ namespace Wox.Plugin.Spotify
                     return GetPlaying();
                 }
                 
+                //Run the query if it is not an expensive search term
                 if(_terms.ContainsKey(query.FirstSearch) && !expensiveSearchTerms.Contains(query.FirstSearch)){
                     var results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
                     return results;                    
                 }
 
-                //If optimizeApiUsage is flagged
-                //  return null if query is updated within 500 ms
+                //If query is expensive, AND if optimizeApiUsage is flagged
+                //  return null if query is updated within set number ms
+                //  this limits the API calls made
+                //  if you type a 10 character query quickly enough, only the last keypress searches the Spotify API
                 if(optimizeApiUsage){
-                    System.Threading.Thread.Sleep(500);
+                    System.Threading.Thread.Sleep(optimzeApiKeyDelay);
                     if(lastQueryTime > thisQueryStartTime){
                         return null;
                     }
@@ -130,6 +138,7 @@ namespace Wox.Plugin.Spotify
             var d = _api.ActiveDeviceName;
             if (d == null)
             {
+                //Must have an active device to control Spotify
                 return SingleResult("No active device","Select device with `sp device`",()=>{});
             }
 
@@ -376,10 +385,10 @@ namespace Wox.Plugin.Spotify
         }
         
         //Return a generic reconnection action
-        private Action reconnectAction(SpotifyApi api){
+        private Action reconnectAction(SpotifyApi api, bool keepRefreshToken = true){
             return () =>
             {
-                Task connectTask = api.ConnectWebApi();
+                Task connectTask = api.ConnectWebApi(keepRefreshToken);
                 //Assign client ID asynchronously when connection finishes
                 connectTask.ContinueWith((connectResult) => { 
                     try{
