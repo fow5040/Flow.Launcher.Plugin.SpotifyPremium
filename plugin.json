@@ -4,7 +4,7 @@
     "Name":"Wox.SpotifyPremium",
     "Description":"Spotify Premium for Wox",
     "Author":"Frank W. (@fow5040)",
-    "Version":"0.9.0",
+    "Version":"0.9.1",
     "Language":"csharp",
     "Website":"https://github.com/fow5040/Wox.Plugin.SpotifyPremium",
     "IcoPath":"icon.png",

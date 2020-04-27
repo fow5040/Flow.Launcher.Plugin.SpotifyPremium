@@ -214,15 +214,23 @@ namespace Wox.Plugin.SpotifyPremium
             lock (_lock)
             {
                 FeaturedPlaylists featuredPlaylists = _spotifyApi.GetFeaturedPlaylists();
-                Paging<SimplePlaylist> userPlaylistsPaging = _spotifyApi.GetUserPlaylists(currentUserID,50);
+                Paging<SimplePlaylist> userPlaylistsPaging = _spotifyApi.GetUserPlaylists(currentUserID,500);
+                List<SimplePlaylist> returnedPlaylists = new List<SimplePlaylist>();
+
                 while (true)
                 {
+                    // Add current page to returnedPlaylists list
+                    // Also, filter results based on search string
+                    returnedPlaylists = returnedPlaylists.Concat(
+                        userPlaylistsPaging.Items.Where(
+                            playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList()).ToList();
+
                     if (!userPlaylistsPaging.HasNextPage())
                         break;
                     userPlaylistsPaging = _spotifyApi.GetNextPage(userPlaylistsPaging);
                 }
+
                 // Filter results based on search and combine into one large SimplePlaylists list
-                List<SimplePlaylist> returnedPlaylists = userPlaylistsPaging.Items.Where( playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList();
                 List<SimplePlaylist> returnedFeaturedPlaylists = featuredPlaylists.Playlists.Items.Where( playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList();
 
                 return returnedPlaylists.Concat(returnedFeaturedPlaylists);

@@ -344,7 +344,7 @@ namespace Wox.Plugin.SpotifyPremium
                 param = "";
             }
 
-            // Retrieve data and return the first 50 playlists
+            // Retrieve data and return the first 500 playlists
             var results = _api.GetPlaylists(param,currentUserId).Select(async x => new Result()
             {
                 Title = x.Name,
