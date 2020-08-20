@@ -2,10 +2,17 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <OutputType>Library</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ApplicationIcon />
+    <StartupObject />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>$(LOCALAPPDATA)\Wox\app-1.3.578\Plugins\Wox.Plugin.SpotifyPremium</OutputPath>
+    <OutputPath>Output\Debug\Wox.Plugin.SpotifyPremium\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>Output\Release\Wox.Plugin.SpotifyPremium</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <None Update="plugin.json">
