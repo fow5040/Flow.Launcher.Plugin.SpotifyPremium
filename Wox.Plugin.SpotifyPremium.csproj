@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <OutputType>Library</OutputType>
@@ -25,11 +25,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="EmbedIO" Version="1.15.0" />
-    <PackageReference Include="Flow.Launcher.Plugin" Version="1.2.0" />
+    <PackageReference Include="EmbedIO" Version="3.4.3" />
+    <PackageReference Include="Flow.Launcher.Plugin" Version="1.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="SpotifyAPI.Web" Version="3.1.1" />
-    <PackageReference Include="SpotifyAPI.Web.Auth" Version="3.1.1" />
-    <PackageReference Include="Unosquare.Swan.Lite" Version="0.33.3" />
+    <PackageReference Include="SpotifyAPI.Web" Version="5.1.1" />
+    <PackageReference Include="SpotifyAPI.Web.Auth" Version="5.1.1" />
+    <PackageReference Include="Unosquare.Swan.Lite" Version="3.1.0" />
   </ItemGroup>
 </Project>
