@@ -18,6 +18,7 @@ namespace Wox.Plugin.SpotifyPremium
         private int mLastVolume = 10;
         private SecurityStore _securityStore;
         private string pluginDirectory;
+        private const string UnknownIcon = "icon.png";
 
         public SpotifyApi(string pluginDir = null)
         {
@@ -325,8 +326,9 @@ namespace Wox.Plugin.SpotifyPremium
 
         public Task<string> GetArtworkAsync(List<Image> images, string uri)
         {
-            if (!images.Any())
-                return null;
+            if (!images.Any()){
+                return Task<string>.Run( () => UnknownIcon );
+            }
 
             var url = images.Last().Url;
 

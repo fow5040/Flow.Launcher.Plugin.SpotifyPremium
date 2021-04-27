@@ -373,6 +373,7 @@ namespace Wox.Plugin.SpotifyPremium
                 SubTitle = x.IsActive ? "Active Device" : "Inactive",
                 //TODO: Add computer and phone icons
                 //IcoPath = await _api.GetArtworkAsync(x.Images,x.Uri),
+                IcoPath = SpotifyIcon,
                 Action = _ =>
                 {
                     _api.SetDevice(x.Id);
