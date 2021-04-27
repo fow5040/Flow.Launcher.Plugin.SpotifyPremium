@@ -38,6 +38,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
     {"ClientID":"yourClientSecret","ClientSecret":"yourClientSecret"}
     ```
     - To generate a key pair, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
+    - After generating a key pair, under "edit settings", add `http://localhost:4002` as a Redirect URI
 - To get started:
     - Restore all NuGet dependencies (nuget restore packages.config -PackagesDirectory ..\packages)
     - Run build script (visual studio code > Run Build Task)
