@@ -39,7 +39,10 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
     ```
     - To generate a key pair, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
     - After generating a key pair, under "edit settings", add `http://localhost:4002` as a Redirect URI
-- To get started:
+- This plugin cannot currently search for Podcasts - this is due to a restructure of the Spotify API which enabled support for "FullEpisode", among other things. See the [SpotifyAPI-NET Documentation](https://johnnycrazy.github.io/SpotifyAPI-NET/docs/iplayableitem) for more information.
+
+### Development
+- To get started developing:
     - Restore all NuGet dependencies (nuget restore packages.config -PackagesDirectory ..\packages)
     - Run build script (visual studio code > Run Build Task)
 
@@ -54,6 +57,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 - Configurable default search type
 - Add configuration menu
     - Would really like a config menu for people to put their own app ID/Secrets
+- Enable full integration with API - including "Episode" and podcast control
 
 ### Reminder Section - because I'm forgetful
 #### _"Release"_ steps
