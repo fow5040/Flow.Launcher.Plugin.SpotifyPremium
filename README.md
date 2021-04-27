@@ -43,7 +43,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 
 ### Development
 - To get started developing:
-    - Restore all NuGet dependencies (nuget restore packages.config -PackagesDirectory ..\packages)
+    - Restore all NuGet dependencies (dotnet restore)
     - Run build script (visual studio code > Run Build Task)
 
 ### Third-Party Libraries
