@@ -54,3 +54,10 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 - Configurable default search type
 - Add configuration menu
     - Would really like a config menu for people to put their own app ID/Secrets
+
+### Reminder Section - because I'm forgetful
+#### _"Release"_ steps
+- Bump version number in `plugin.json`
+- `dotnet build --configuration Release`
+- zip up contents of bin/Release as <something>.wox
+- Upload 
