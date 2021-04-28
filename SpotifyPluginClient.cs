@@ -1,6 +1,5 @@
 using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
-using SpotifyAPI.Web.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -143,6 +142,11 @@ namespace Wox.Plugin.SpotifyPremium
             //else{
             //    _spotifyClient.ResumePlaybackAsync("",uri, null, "", 0);
             //}
+        }
+        public void Enqueue(String uri)
+        {
+            PlayerAddToQueueRequest enqueueRequest = new PlayerAddToQueueRequest(uri);
+            _spotifyClient.Player.AddToQueue(enqueueRequest);
         }
 
         public void Pause()
