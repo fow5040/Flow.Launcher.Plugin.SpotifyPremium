@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using SpotifyAPI.Web.Models;
+using SpotifyAPI.Web;
 
 namespace Wox.Plugin.SpotifyPremium
 {
