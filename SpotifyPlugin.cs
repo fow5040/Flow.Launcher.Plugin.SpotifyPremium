@@ -243,7 +243,7 @@ namespace Wox.Plugin.SpotifyPremium
 
             if (string.IsNullOrWhiteSpace(param))
             {
-                return new List<Result>();
+                return SingleResult("sp {any search term}", "Perform a full search on albums, tracks, artists, and playlists.");
             }
 
             // Retrieve data and return the first 20 results
@@ -271,7 +271,7 @@ namespace Wox.Plugin.SpotifyPremium
 
             if (string.IsNullOrWhiteSpace(param))
             {
-                return new List<Result>();
+                return SingleResult("sp track {track name}", "Search for a single Track to play.");
             }
 
             // Retrieve data and return the first 20 results
@@ -302,7 +302,7 @@ namespace Wox.Plugin.SpotifyPremium
 
             if (string.IsNullOrWhiteSpace(param))
             {
-                return new List<Result>();
+                return SingleResult("sp album {album name}", "Search for an Album to play.");
             }
 
             //Get first page of results
@@ -329,7 +329,7 @@ namespace Wox.Plugin.SpotifyPremium
 
             if (string.IsNullOrWhiteSpace(param))
             {
-                return new List<Result>();
+                return SingleResult("sp artist {artist name}", "Search for an Artist to play.");
             }
 
             //Get first page of results
@@ -449,7 +449,7 @@ namespace Wox.Plugin.SpotifyPremium
 
             if (string.IsNullOrWhiteSpace(param))
             {
-                return SingleResult("Queue", "Search for a track to queue it up.");
+                return SingleResult("sp queue {trackname}", "Search for a track to add it to your play queue.");
             }
 
             var results = SearchTrack(param, true);
