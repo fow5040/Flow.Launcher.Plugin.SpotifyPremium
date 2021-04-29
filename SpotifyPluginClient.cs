@@ -91,7 +91,7 @@ namespace Wox.Plugin.SpotifyPremium
         public String UserID{
             get
             {
-                return _spotifyClient.UserProfile.Current().Result.Id;
+                return _spotifyClient.UserProfile.Current().GetAwaiter().GetResult().Id;
             }
         }
 
@@ -125,7 +125,10 @@ namespace Wox.Plugin.SpotifyPremium
 
         public void Play()
         {
-            _spotifyClient.Player.ResumePlayback().GetAwaiter().GetResult();
+            if ( ! PlaybackContext.IsPlaying)
+            {
+                _spotifyClient.Player.ResumePlayback().GetAwaiter().GetResult();
+            }
         }
 
         // Due to API Enhancements, the Spotify API can now return FullEpisodes or FullTracks 
@@ -134,7 +137,7 @@ namespace Wox.Plugin.SpotifyPremium
         {
             PlayerResumePlaybackRequest startSongRequest = new PlayerResumePlaybackRequest();
             startSongRequest.Uris.Add(uri);
-            _spotifyClient.Player.ResumePlayback(startSongRequest);
+            _spotifyClient.Player.ResumePlayback(startSongRequest).GetAwaiter().GetResult();
 
             //if(uri.Contains(":track:")){
             //    _spotifyClient.ResumePlaybackAsync("","", new List<string>() { uri }, "", 0);
@@ -146,7 +149,7 @@ namespace Wox.Plugin.SpotifyPremium
         public void Enqueue(String uri)
         {
             PlayerAddToQueueRequest enqueueRequest = new PlayerAddToQueueRequest(uri);
-            _spotifyClient.Player.AddToQueue(enqueueRequest);
+            _spotifyClient.Player.AddToQueue(enqueueRequest).GetAwaiter().GetResult();;
         }
 
         public void Pause()
@@ -179,19 +182,19 @@ namespace Wox.Plugin.SpotifyPremium
                 volRequest = new PlayerVolumeRequest(mLastVolume);
             }
 
-            _spotifyClient.Player.SetVolume(volRequest);
+            _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();;
         }
 
         public void SetVolume(int volumePercent = 0)
         {
             var volRequest = new PlayerVolumeRequest(volumePercent);
-            _spotifyClient.Player.SetVolume(volRequest);
+            _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();;
         }
 
         public void ToggleShuffle()
         {
             var shuffleRequest = new PlayerShuffleRequest(!ShuffleStatus);
-            _spotifyClient.Player.SetShuffle(shuffleRequest);
+            _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();;
             //_spotifyClient.SetShuffleAsync(!ShuffleStatus);
         }
 
@@ -203,12 +206,16 @@ namespace Wox.Plugin.SpotifyPremium
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
-                var refreshRequest = new TokenSwapRefreshRequest(
-                    new Uri("http://localhost:5001/refresh"),
-                    _securityStore.RefreshToken
-                );
+               // var refreshRequest = new TokenSwapRefreshRequest(
+               //     new Uri("http://localhost:5001/refresh"),
+               //     _securityStore.RefreshToken
+               // );
                 
+                var refreshRequest = new AuthorizationCodeRefreshRequest(_securityStore.ClientId, 
+                                                                         _securityStore.ClientSecret,
+                                                                         _securityStore.RefreshToken);
                 var refreshResponse = await new OAuthClient().RequestToken(refreshRequest) ;
+
                 _spotifyClient = new SpotifyClient(refreshResponse.AccessToken);
 
             }
@@ -320,7 +327,7 @@ namespace Wox.Plugin.SpotifyPremium
                 returnResults.AddRange(searchResponse.Artists.Items.Select( x => new SpotifySearchResult()
                 {
                     Title = $"Artist  :  {x.Name}",
-                    Subtitle = $"Play Artist Radio: {x.Name}",
+                    Subtitle = $"Artist Radio: {x.Name}",
                     Id = x.Id,
                     Name = x.Name,
                     Uri = x.Uri,
@@ -367,7 +374,7 @@ namespace Wox.Plugin.SpotifyPremium
         public void SetDevice(string deviceId = "")
         {
             var transferRequest = new PlayerTransferPlaybackRequest(new List<string>{deviceId});
-            _spotifyClient.Player.TransferPlayback(transferRequest);
+            _spotifyClient.Player.TransferPlayback(transferRequest).GetAwaiter().GetResult();;
         }
 
         public Task<string> GetArtworkAsync(SimpleAlbum album) => GetArtworkAsync(album.Images, album.Uri);
