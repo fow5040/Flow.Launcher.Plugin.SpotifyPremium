@@ -80,7 +80,7 @@ namespace Wox.Plugin.SpotifyPremium
             get
             {
                 //Returns null, or active device string
-                DeviceResponse allDevices = _spotifyClient.Player.GetAvailableDevices().GetAwaiter().GetResult();;
+                DeviceResponse allDevices = _spotifyClient.Player.GetAvailableDevices().GetAwaiter().GetResult();
                 if (allDevices.Devices == null) return null;
                 
                 Device ActiveDevice = allDevices.Devices.FindLast( device => device.IsActive);
@@ -215,9 +215,10 @@ namespace Wox.Plugin.SpotifyPremium
                                                                          _securityStore.ClientSecret,
                                                                          _securityStore.RefreshToken);
                 var refreshResponse = await new OAuthClient().RequestToken(refreshRequest) ;
-
-                _spotifyClient = new SpotifyClient(refreshResponse.AccessToken);
-
+                lock(_lock)
+                {
+                    _spotifyClient = new SpotifyClient(refreshResponse.AccessToken);
+                }
             }
             else
             {
@@ -232,10 +233,18 @@ namespace Wox.Plugin.SpotifyPremium
                                                           _securityStore.ClientSecret,
                                                           response.Code,
                                                           _server.BaseUri));
+                    lock(_lock)
+                    {
+                        _securityStore.RefreshToken = token.RefreshToken;
+                        _securityStore.Save(pluginDirectory);
+                        _spotifyClient = new SpotifyClient(token.AccessToken);
+                    }
+                };
 
-                    _securityStore.RefreshToken = token.RefreshToken;
-                    _securityStore.Save(pluginDirectory);
-                    _spotifyClient = new SpotifyClient(token.AccessToken);
+                _server.ErrorReceived += async (object sender, string error, string state) =>
+                {
+                    Console.WriteLine($"Aborting authorization, error received: {error}");
+                    await _server.Stop();
                 };
 
                 var request = new LoginRequest(_server.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
@@ -245,6 +254,7 @@ namespace Wox.Plugin.SpotifyPremium
                                                UserReadPrivate,
                                                UserReadPlaybackPosition,
                                                UserReadCurrentlyPlaying,
+                                               UserReadPlaybackState,
                                                UserModifyPlaybackState,
                                                AppRemoteControl,
                                                PlaylistReadPrivate }
