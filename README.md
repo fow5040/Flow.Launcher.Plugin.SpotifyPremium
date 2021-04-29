@@ -19,6 +19,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 | `` sp artist {artist name} ``      | Search for an artist          |
 | `` sp album {album name} ``        | Search for an album           |
 | `` sp playlist {playlist name} ``  | Search personal playlists     |
+| `` sp queue {track name} ``        | Search for track and queue it |
 | `` sp next ``                      | Play next track               |
 | `` sp last ``                      | Play previous track           |
 | `` sp play ``                      | Resume currently playing track|
@@ -38,8 +39,10 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
     {"ClientID":"yourClientSecret","ClientSecret":"yourClientSecret"}
     ```
     - To generate a key pair, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
-    - After generating a key pair, under "edit settings", add `http://localhost:4002` as a Redirect URI
+    - After generating a key pair, under "edit settings", add `http://localhost:4002/callback` as a Redirect URI
 - This plugin cannot currently search for Podcasts - this is due to a restructure of the Spotify API which enabled support for "FullEpisode", among other things. See the [SpotifyAPI-NET Documentation](https://johnnycrazy.github.io/SpotifyAPI-NET/docs/iplayableitem) for more information.
+- The Spotify queue API currently only supports adding single tracks to queues, not albums, even though the player can add albums, etc.
+- Set Wox Maximum Results Shown to 12 or higher for best results
 
 ### Development
 - To get started developing:

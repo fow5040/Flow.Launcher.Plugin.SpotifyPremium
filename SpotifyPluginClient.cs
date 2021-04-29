@@ -125,6 +125,8 @@ namespace Wox.Plugin.SpotifyPremium
 
         public void Play()
         {
+            //Issuing a play command while a track is already playing causes the
+            //  Spotify API to return an error
             if ( ! PlaybackContext.IsPlaying)
             {
                 _spotifyClient.Player.ResumePlayback().GetAwaiter().GetResult();
@@ -136,16 +138,19 @@ namespace Wox.Plugin.SpotifyPremium
         public void Play(String uri)
         {
             PlayerResumePlaybackRequest startSongRequest = new PlayerResumePlaybackRequest();
-            startSongRequest.Uris.Add(uri);
-            _spotifyClient.Player.ResumePlayback(startSongRequest).GetAwaiter().GetResult();
 
-            //if(uri.Contains(":track:")){
-            //    _spotifyClient.ResumePlaybackAsync("","", new List<string>() { uri }, "", 0);
-            //}
-            //else{
-            //    _spotifyClient.ResumePlaybackAsync("",uri, null, "", 0);
-            //}
+            //Uses contextUri for playlists, artists, albums, otherwise regular URI
+            if(uri.Contains(":track:")){
+                startSongRequest.Uris = new List<string>(){uri};
+            }
+            else{
+                startSongRequest.ContextUri = uri;
+            }
+
+            _spotifyClient.Player.ResumePlayback(startSongRequest).GetAwaiter().GetResult();
         }
+
+        //The queue API only currently supports single tracks
         public void Enqueue(String uri)
         {
             PlayerAddToQueueRequest enqueueRequest = new PlayerAddToQueueRequest(uri);
@@ -195,21 +200,16 @@ namespace Wox.Plugin.SpotifyPremium
         {
             var shuffleRequest = new PlayerShuffleRequest(!ShuffleStatus);
             _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();;
-            //_spotifyClient.SetShuffleAsync(!ShuffleStatus);
         }
 
         public async Task ConnectWebClient(bool keepRefreshToken = true)
         {
             _securityStore = SecurityStore.Load(pluginDirectory);
 
-            EmbedIOAuthServer _server = new EmbedIOAuthServer(new Uri("http://localhost:5000/callback"), 5000);
+            EmbedIOAuthServer _server = new EmbedIOAuthServer(new Uri("http://localhost:4002/callback"), 4002);
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
-               // var refreshRequest = new TokenSwapRefreshRequest(
-               //     new Uri("http://localhost:5001/refresh"),
-               //     _securityStore.RefreshToken
-               // );
                 
                 var refreshRequest = new AuthorizationCodeRefreshRequest(_securityStore.ClientId, 
                                                                          _securityStore.ClientSecret,

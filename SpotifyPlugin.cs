@@ -214,7 +214,6 @@ namespace Wox.Plugin.SpotifyPremium
         private List<Result> ToggleMute(string arg = null)
         {
             var toggleAction = _client.MuteStatus ? "Unmute" : "Mute";
-
             return SingleResult("Toggle Mute", $"{toggleAction}: {_client.CurrentPlaybackName}", _client.ToggleMute);
         }
 
@@ -235,11 +234,10 @@ namespace Wox.Plugin.SpotifyPremium
         private List<Result> ToggleShuffle(string arg = null)
         {
             var toggleAction = _client.ShuffleStatus ? "Off" : "On";
-
             return SingleResult("Toggle Shuffle", $"Turn Shuffle {toggleAction}", _client.ToggleShuffle);
         }
 
-        private List<Result> SearchAll(string param, bool shouldQueue = false)
+        private List<Result> SearchAll(string param)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -253,14 +251,11 @@ namespace Wox.Plugin.SpotifyPremium
             var results = searchResults.Select(async x => new Result()
             {
                 Title = x.Title,
-                SubTitle = (shouldQueue ? "Queue " : "") + x.Subtitle,
+                SubTitle = x.Subtitle,
                 IcoPath = await _client.GetArtworkAsync(x),
                 Action = _ =>
                 {
-                    if (shouldQueue)
-                        _client.Enqueue(x.Uri);
-                    else
-                        _client.Play(x.Uri);
+                    _client.Play(x.Uri);
                     return true;
                 }
             }).ToArray();
@@ -269,7 +264,8 @@ namespace Wox.Plugin.SpotifyPremium
             return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
-        private List<Result> SearchTrack(string param)
+        private List<Result> SearchTrack(string param) => SearchTrack(param, false);
+        private List<Result> SearchTrack(string param, bool shouldQueue = false)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -283,11 +279,15 @@ namespace Wox.Plugin.SpotifyPremium
             var results = searchResults.Select(async x => new Result()
             {
                 Title = x.Name,
-                SubTitle = "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name)),
+                SubTitle = (shouldQueue ? "Queue track by " : "") + 
+                           "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name)),
                 IcoPath = await _client.GetArtworkAsync(x),
                 Action = _ =>
                 {
-                    _client.Play(x.Uri);
+                    if (shouldQueue)
+                        _client.Enqueue(x.Uri);
+                    else
+                        _client.Play(x.Uri);
                     return true;
                 }
             }).ToArray();
@@ -449,10 +449,10 @@ namespace Wox.Plugin.SpotifyPremium
 
             if (string.IsNullOrWhiteSpace(param))
             {
-                return SingleResult("Queue", "Search for a song to queue it up.");
+                return SingleResult("Queue", "Search for a track to queue it up.");
             }
 
-            var results = SearchAll(param, true);
+            var results = SearchTrack(param, true);
 
             return (results.Count() > 0) ? results : NothingFoundResult;
         }
