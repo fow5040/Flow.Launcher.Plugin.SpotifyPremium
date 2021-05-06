@@ -27,7 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Flow.Launcher.Plugin" Version="1.2.1" />
-    <PackageReference Include="SpotifyAPI.Web" Version="5.1.1" />
-    <PackageReference Include="SpotifyAPI.Web.Auth" Version="5.1.1" />
+    <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />
+    <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.0" />
   </ItemGroup>
 </Project>

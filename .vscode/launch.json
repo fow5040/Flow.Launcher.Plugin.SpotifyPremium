@@ -5,20 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Launch | DO NOT USE",
-            "type": "clr",
-            "request": "launch",
-            "program": "${env:LOCALAPPDATA}/Wox/Wox.exe",//"%LOCALAPPDATA%/Wox/Wox.exe",
-            "args": [],
-            "cwd": "${workspaceFolder}",
-            "console": "internalConsole",
-            "stopAtEntry": false
-        },
-        {
             "name": ".NET Attach",
             "type": "clr",
             "request": "attach",
-            "processName": "wox.exe"
+            "processName": "FLow.Launcher.exe"
         }
     ]
 }

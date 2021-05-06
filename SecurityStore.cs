@@ -11,12 +11,16 @@ namespace Wox.Plugin.SpotifyPremium
     class SecurityStore
     {
         public String RefreshToken { get; set; }
+
         public Boolean HasRefreshToken { get { return !String.IsNullOrEmpty(RefreshToken); } }
         public String ClientSecret { get; set;}
         public String ClientId {get; set;}
 
         public static SecurityStore Load(string pluginDir = null)
         {
+
+
+
             if(new FileInfo(pluginDir+"\\security.store").Exists)
             {
                 return JsonConvert.DeserializeObject<SecurityStore>(File.ReadAllText(pluginDir+"\\security.store"));
