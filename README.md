@@ -2,7 +2,7 @@ This is a port of the Wox plugin [SpotifyPremium](https://github.com/fow5040/Wox
 
 This port is intended to be used for [Flow Launcher](https://github.com/Flow-Launcher/Flow.Launcher). It will not work for Wox.
 
-To download this plugin, go to the latest [release](https://github.com/jjw24/Wox.Plugin.SpotifyPremium/releases/latest) and extract the zip file to Flow's user data plugin directory.
+To download and use this plugin, from [Flow](https://github.com/Flow-Launcher/Flow.Launcher/releases/latest) type `pm install spotifypremium`.
 
 -------------------
 

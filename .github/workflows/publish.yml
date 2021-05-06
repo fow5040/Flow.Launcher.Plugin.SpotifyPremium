@@ -1,0 +1,37 @@
+name: Publish Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+    paths-ignore: 
+      - .github/workflows/*
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.301
+      - name: get version
+        id: version
+        uses: notiz-dev/github-action-json-property@release
+        with: 
+          path: 'Wox.Plugin.SpotifyPremium/plugin.json'
+          prop_path: 'Version'
+      - run: echo ${{steps.version.outputs.prop}} 
+      - name: Build
+        run: |
+          dotnet publish 'Wox.Plugin.SpotifyPremium/Wox.Plugin.SpotifyPremium.csproj' --framework netcoreapp3.1  -c Release -o "SpotifyPremium"
+          7z a -tzip "Wox.Plugin.SpotifyPremium.zip" "SpotifyPremium/*"
+          rm -r "SpotifyPremium"
+      - name: Publish
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "Wox.Plugin.SpotifyPremium.zip"
+          tag_name: "v${{steps.version.outputs.prop}}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
