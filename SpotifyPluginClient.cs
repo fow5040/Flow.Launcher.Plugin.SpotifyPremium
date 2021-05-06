@@ -146,15 +146,26 @@ namespace Wox.Plugin.SpotifyPremium
             else{
                 startSongRequest.ContextUri = uri;
             }
+            try {
+                _spotifyClient.Player.ResumePlayback(startSongRequest).GetAwaiter().GetResult();
+            } catch (Exception e){
+                //Expect playing to fail if no device is active
+                Console.WriteLine(e);
+                return;
+            }
 
-            _spotifyClient.Player.ResumePlayback(startSongRequest).GetAwaiter().GetResult();
         }
 
         //The queue API only currently supports single tracks
         public void Enqueue(String uri)
         {
             PlayerAddToQueueRequest enqueueRequest = new PlayerAddToQueueRequest(uri);
-            _spotifyClient.Player.AddToQueue(enqueueRequest).GetAwaiter().GetResult();;
+            try {
+                _spotifyClient.Player.AddToQueue(enqueueRequest).GetAwaiter().GetResult();;
+            } catch (Exception e){
+                //Expect queueing to fail if no device is active
+                Console.WriteLine(e);
+            }
         }
 
         public void Pause()
