@@ -20,12 +20,12 @@ jobs:
         id: version
         uses: notiz-dev/github-action-json-property@release
         with: 
-          path: 'Wox.Plugin.SpotifyPremium/plugin.json'
+          path: 'plugin.json'
           prop_path: 'Version'
       - run: echo ${{steps.version.outputs.prop}} 
       - name: Build
         run: |
-          dotnet publish 'Wox.Plugin.SpotifyPremium/Wox.Plugin.SpotifyPremium.csproj' --framework netcoreapp3.1  -c Release -o "SpotifyPremium"
+          dotnet publish 'Wox.Plugin.SpotifyPremium.csproj' --framework netcoreapp3.1  -c Release -o "SpotifyPremium"
           7z a -tzip "Wox.Plugin.SpotifyPremium.zip" "SpotifyPremium/*"
           rm -r "SpotifyPremium"
       - name: Publish
