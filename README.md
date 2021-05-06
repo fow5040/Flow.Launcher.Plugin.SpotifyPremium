@@ -9,11 +9,11 @@ To download this plugin, go to the latest [release](https://github.com/jjw24/Wox
 Wox.Plugin.SpotifyPremium
 ==================
 
-Spotify plugin for the [Wox launcher](https://github.com/Wox-launcher/Wox)
+Spotify plugin for the [Flow Launcher](https://github.com/Flow-launcher/Flow.Launcher)
 
 ### About
 
-Control your Spotify client from Wox. Search for tracks, artists, or albums and launch the results directly to your client.
+Control your Spotify client from the Flow Launcher. Search for tracks, artists, or albums and launch the results directly to your client.
 This plugin requires the use of the Spotify Web API, which is only accessible through Spotify Premium
 
 ![image](http://i.imgur.com/AfUkPvd.gif)
@@ -40,19 +40,18 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
-- **You _NEED_ a client secret and client ID to use this plugin!**
-    - This app currently hardcodes my personal Client ID and Client Secret to interact with Spotify. If current app usage hits any API limits, naturally you will need to switch out the current Client ID and Secret
-    - To use a custom ID/Secret, create a file called security.store in _*your Flow UserData directory*\Plugins\SpotifyPremium-*ver*\security.store_ with the following format:
-    ```
-    {"ClientID":"yourClientSecret","ClientSecret":"yourClientSecret"}
-    ```
-    - If using roaming: `%APPDATA%\FlowLauncher`
-    - If using portable, by default: `%localappdata%\FlowLauncher\app-<VersionOfYourFlowLauncher>\UserData`
-    - To generate a key pair, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
+- **You _NEED_ a client secret and client ID to use this plugin!** This app currently hardcodes my personal Client ID and Client Secret to interact with Spotify. If current app usage hits any API limits, naturally you will need to switch out the current Client ID and Secret
+- To use a custom ID/Secret, create a file called security.store in _*yourFlowUserDataDirectory*\Plugins\SpotifyPremium-*ver*\security.store_ with the following format:
+```
+{"ClientID":"yourClientSecret","ClientSecret":"yourClientSecret"}
+```
+    - If using roaming, your Flow Userdata Directory is: `%APPDATA%\FlowLauncher`
+    - If using portable, your Flow Userdata Directory is : `%localappdata%\FlowLauncher\app-<VersionOfYourFlowLauncher>\UserData`
+    - To generate a Client ID and Secret, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
     - After generating a key pair, under "edit settings", add `http://localhost:4002/callback` as a Redirect URI
 - This plugin cannot currently search for Podcasts - this is due to a restructure of the Spotify API which enabled support for "FullEpisode", among other things. See the [SpotifyAPI-NET Documentation](https://johnnycrazy.github.io/SpotifyAPI-NET/docs/iplayableitem) for more information.
 - The Spotify queue API currently only supports adding single tracks to queues, not albums, even though the player can add albums, etc.
-- Set Wox Maximum Results Shown to 12 or higher for best results
+- Set Flow Launcher Maximum Results Shown to 12 or higher for best results
 
 ### Development
 - To get started developing:
