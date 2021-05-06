@@ -1,3 +1,11 @@
+This is a port of the Wox plugin [SpotifyPremium](https://github.com/fow5040/Wox.Plugin.SpotifyPremium) created by fow5040 (@fow5040), based on the work from [Spotify](https://github.com/JohnTheGr8/Wox.Plugin.Spotify) by Ioannis G. (@JohnTheGr8).
+
+This port is intended to be used for [Flow Launcher](https://github.com/Flow-Launcher/Flow.Launcher). It will not work for Wox.
+
+To download this plugin, go to the latest [release](https://github.com/jjw24/Wox.Plugin.SpotifyPremium/releases/latest) and extract the zip file to Flow's user data plugin directory.
+
+-------------------
+
 Wox.Plugin.SpotifyPremium
 ==================
 
@@ -34,10 +42,12 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
 - **You _NEED_ a client secret and client ID to use this plugin!**
     - This app currently hardcodes my personal Client ID and Client Secret to interact with Spotify. If current app usage hits any API limits, naturally you will need to switch out the current Client ID and Secret
-    - To use a custom ID/Secret, create a file called security.store in _%localAppData%\Wox\app-1.3.578\Plugins\Wox.Plugin.SpotifyPremium\security.store_ with the following format:
+    - To use a custom ID/Secret, create a file called security.store in _*your Flow UserData directory*\Plugins\SpotifyPremium-*ver*\security.store_ with the following format:
     ```
     {"ClientID":"yourClientSecret","ClientSecret":"yourClientSecret"}
     ```
+    - If using roaming: `%APPDATA%\FlowLauncher`
+    - If using portable, by default: `%localappdata%\FlowLauncher\app-<VersionOfYourFlowLauncher>\UserData`
     - To generate a key pair, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
     - After generating a key pair, under "edit settings", add `http://localhost:4002/callback` as a Redirect URI
 - This plugin cannot currently search for Podcasts - this is due to a restructure of the Spotify API which enabled support for "FullEpisode", among other things. See the [SpotifyAPI-NET Documentation](https://johnnycrazy.github.io/SpotifyAPI-NET/docs/iplayableitem) for more information.
@@ -47,7 +57,8 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 ### Development
 - To get started developing:
     - Restore all NuGet dependencies (dotnet restore)
-    - Run build script (visual studio code > Run Build Task)
+    - Build with `dotnet build`
+    - Copy the `Output/Debug/<Plugin>` folder to your FlowLauncher `Userdata\Plugins` folder
 
 ### Third-Party Libraries
 
@@ -60,11 +71,3 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 - Configurable default search type
 - Add configuration menu
     - Would really like a config menu for people to put their own app ID/Secrets
-- Enable full integration with API - including "Episode" and podcast control
-
-### Reminder Section - because I'm forgetful
-#### _"Release"_ steps
-- Bump version number in `plugin.json`
-- `dotnet build --configuration Release`
-- zip up contents of bin/Release as <something>.wox
-- Upload 

@@ -14,6 +14,6 @@ Please mark the functionality of the plugin that is affected by the issue:
 Please fill in the following information:
 
 - Spotify client version (`Help > About Spotify`):
-- Wox version (`Wox Settings > About`):
+- Flow Launcher version (`Flow Settings > About`):
 
 **Please also make sure you're running the latest version of Wox.Plugin.Spotify**
