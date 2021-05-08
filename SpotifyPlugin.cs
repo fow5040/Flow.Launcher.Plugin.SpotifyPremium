@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SpotifyAPI.Web;
 
-namespace Wox.Plugin.SpotifyPremium
+namespace Flow.Launcher.Plugin.SpotifyPremium
 {
     public class SpotifyPlugin : IPlugin
     {

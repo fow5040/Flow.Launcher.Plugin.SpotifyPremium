@@ -16,4 +16,4 @@ Please fill in the following information:
 - Spotify client version (`Help > About Spotify`):
 - Flow Launcher version (`Flow Settings > About`):
 
-**Please also make sure you're running the latest version of Wox.Plugin.Spotify**
+**Please also make sure you're running the latest version of Flow.Launcher.Plugin.SpotifyPremium**

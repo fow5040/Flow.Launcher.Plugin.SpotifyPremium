@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace Wox.Plugin.SpotifyPremium
+namespace Flow.Launcher.Plugin.SpotifyPremium
 {
     class SecurityStore
     {

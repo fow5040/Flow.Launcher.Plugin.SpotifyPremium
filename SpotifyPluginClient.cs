@@ -8,7 +8,7 @@ using System.Linq;
 using System.Net;
 using static SpotifyAPI.Web.Scopes;
 
-namespace Wox.Plugin.SpotifyPremium
+namespace Flow.Launcher.Plugin.SpotifyPremium
 {
     public class SpotifyPluginClient
     {

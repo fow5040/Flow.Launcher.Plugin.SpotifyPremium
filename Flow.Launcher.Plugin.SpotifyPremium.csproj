@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <OutputType>Library</OutputType>
@@ -8,12 +8,14 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <ApplicationIcon />
     <StartupObject />
+    <AssemblyName>Flow.Launcher.Plugin.SpotifyPremium</AssemblyName>
+    <RootNamespace>Flow.Launcher.Plugin.SpotifyPremium</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>Output\Debug\Wox.Plugin.SpotifyPremium\</OutputPath>
+    <OutputPath>Output\Debug\Flow.Launcher.Plugin.SpotifyPremium\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>Output\Release\Wox.Plugin.SpotifyPremium</OutputPath>
+    <OutputPath>Output\Release\Flow.Launcher.Plugin.SpotifyPremium</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <None Update="plugin.json">

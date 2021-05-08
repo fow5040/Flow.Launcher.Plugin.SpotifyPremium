@@ -25,13 +25,13 @@ jobs:
       - run: echo ${{steps.version.outputs.prop}} 
       - name: Build
         run: |
-          dotnet publish 'Wox.Plugin.SpotifyPremium.csproj' --framework netcoreapp3.1  -c Release -o "SpotifyPremium"
-          7z a -tzip "Wox.Plugin.SpotifyPremium.zip" "SpotifyPremium/*"
+          dotnet publish 'Flow.Launcher.Plugin.SpotifyPremium.csproj' --framework netcoreapp3.1  -c Release -o "SpotifyPremium"
+          7z a -tzip "Flow.Launcher.Plugin.SpotifyPremium.zip" "SpotifyPremium/*"
           rm -r "SpotifyPremium"
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
-          files: "Wox.Plugin.SpotifyPremium.zip"
+          files: "Flow.Launcher.Plugin.SpotifyPremium.zip"
           tag_name: "v${{steps.version.outputs.prop}}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

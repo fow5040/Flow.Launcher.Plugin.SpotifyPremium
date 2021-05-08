@@ -1,12 +1,12 @@
 {
-    "ID":"SY91U1N7H9D0X1DTZ8IOP4YV43KT7C5M",
-    "ActionKeyword":"sp",
-    "Name":"SpotifyPremium",
-    "Description":"Spotify Premium for Flow Launcher",
-    "Author":"Frank W. (@fow5040)",
-    "Version":"1.1.0",
-    "Language":"csharp",
-    "Website":"https://github.com/fow5040/Wox.Plugin.SpotifyPremium",
-    "IcoPath":"icon.png",
-    "ExecuteFileName":"Wox.Plugin.SpotifyPremium.dll"
+  "ID": "SY91U1N7H9D0X1DTZ8IOP4YV43KT7C5M",
+  "ActionKeyword": "sp",
+  "Name": "SpotifyPremium",
+  "Description": "Spotify Premium for Flow Launcher",
+  "Author": "Frank W. (@fow5040)",
+  "Version": "1.1.0",
+  "Language": "csharp",
+  "Website": "https://github.com/fow5040/Flow.Launcher.Plugin.SpotifyPremium",
+  "IcoPath": "icon.png",
+  "ExecuteFileName": "Flow.Launcher.Plugin.SpotifyPremium.dll"
 }

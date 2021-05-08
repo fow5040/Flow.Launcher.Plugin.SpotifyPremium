@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using SpotifyAPI.Web;
 
-namespace Wox.Plugin.SpotifyPremium
+namespace Flow.Launcher.Plugin.SpotifyPremium
 {
     public class SpotifySearchResult
     {
