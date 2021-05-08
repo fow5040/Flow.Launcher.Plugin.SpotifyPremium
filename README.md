@@ -1,15 +1,7 @@
-This is a port of the Wox plugin [SpotifyPremium](https://github.com/fow5040/Wox.Plugin.SpotifyPremium) created by fow5040 (@fow5040), based on the work from [Spotify](https://github.com/JohnTheGr8/Wox.Plugin.Spotify) by Ioannis G. (@JohnTheGr8).
-
-This port is intended to be used for [Flow Launcher](https://github.com/Flow-Launcher/Flow.Launcher). It will not work for Wox.
-
-To download and use this plugin, from [Flow](https://github.com/Flow-Launcher/Flow.Launcher/releases/latest) type `pm install spotifypremium`.
-
--------------------
-
-Wox.Plugin.SpotifyPremium
+Flow.Launcher.Plugin.SpotifyPremium
 ==================
 
-Spotify plugin for the [Flow Launcher](https://github.com/Flow-launcher/Flow.Launcher)
+Spotify plugin for [Flow Launcher](https://github.com/Flow-launcher/Flow.Launcher)
 
 ### About
 
