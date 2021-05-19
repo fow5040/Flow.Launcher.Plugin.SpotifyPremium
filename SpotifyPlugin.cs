@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SpotifyAPI.Web;
+using Flow.Launcher.Plugin.SpotifyPremium.ViewModels;
+using Flow.Launcher.Plugin.SpotifyPremium.Views;
+using System.Windows.Controls;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
@@ -12,6 +15,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private PluginInitContext _context;
 
         private SpotifyPluginClient _client;
+        
+        private Settings _settings;
+        private SettingsViewModel viewModel;
 
         private readonly Dictionary<string, Func<string, List<Result>>> _terms = new Dictionary<string, Func<string, List<Result>>>();
 
@@ -32,9 +38,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private String[] expensiveSearchTerms = {"artist","album","track","playlist", "queue"};  //Specify expensive search terms for optimizing client usage
                                                                                         //Wait for delay before querying 
 
+        public Control CreateSettingPanel()
+        {
+            return new SpotifyPremiumSettings(viewModel);
+        }
         public void Init(PluginInitContext context)
         {
             _context = context;
+            viewModel = new SettingsViewModel(_context);
+            viewModel.Load();
+            _settings = viewModel.settings;
             lastQueryTime = DateTime.UtcNow;
 
             // initialize data, passing it the plugin directory
