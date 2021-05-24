@@ -10,7 +10,7 @@ using System.Windows.Controls;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
-    public class SpotifyPlugin : IPlugin
+    public class SpotifyPlugin : IPlugin, ISettingProvider
     {
         private PluginInitContext _context;
 
@@ -42,6 +42,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             return new SpotifyPremiumSettings(viewModel);
         }
+
         public void Init(PluginInitContext context)
         {
             _context = context;
