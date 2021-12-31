@@ -26,3 +26,5 @@ packages/
 
 .vs/
 security.store
+
+.idea/
