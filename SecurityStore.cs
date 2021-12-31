@@ -4,26 +4,26 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
     class SecurityStore
     {
-        public String RefreshToken { get; set; }
+        public string RefreshToken { get; set; }
 
-        public Boolean HasRefreshToken { get { return !String.IsNullOrEmpty(RefreshToken); } }
-        public String ClientSecret { get; set;}
-        public String ClientId {get; set;}
+        public bool HasRefreshToken => !string.IsNullOrEmpty(RefreshToken);
+        [JsonInclude]
+        public string ClientSecret { get; private set;}
+        [JsonInclude]
+        public string ClientId {get; private set;}
 
         public static SecurityStore Load(string pluginDir = null)
         {
-
-
-
             if(new FileInfo(pluginDir+"\\security.store").Exists)
             {
-                return JsonConvert.DeserializeObject<SecurityStore>(File.ReadAllText(pluginDir+"\\security.store"));
+                return JsonSerializer.Deserialize<SecurityStore>(File.ReadAllText(pluginDir+"\\security.store"));
             }
             //Including personal ClientID and Secret
             //May remove if potential App/API usage gets out of hand
@@ -35,7 +35,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public void Save(string pluginDir = null)
         {
-            File.WriteAllText(pluginDir+"\\security.store", JsonConvert.SerializeObject(this));
+            File.WriteAllText(pluginDir+"\\security.store", JsonSerializer.Serialize(this));
         }
     }
 }
