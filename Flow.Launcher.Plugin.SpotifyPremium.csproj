@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
@@ -28,8 +28,8 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Flow.Launcher.Plugin" Version="1.2.1" />
-    <PackageReference Include="SpotifyAPI.Web" Version="6.2.0" />
-    <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.0" />
+    <PackageReference Include="Flow.Launcher.Plugin" Version="2.1.0" />
+    <PackageReference Include="SpotifyAPI.Web" Version="6.2.2" />
+    <PackageReference Include="SpotifyAPI.Web.Auth" Version="6.2.2" />
   </ItemGroup>
 </Project>

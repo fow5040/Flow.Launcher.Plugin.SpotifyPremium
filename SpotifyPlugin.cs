@@ -2,68 +2,77 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using SpotifyAPI.Web;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
-    public class SpotifyPlugin : IPlugin
+    public class SpotifyPlugin : IAsyncPlugin
     {
         private PluginInitContext _context;
 
         private SpotifyPluginClient _client;
 
-        private readonly Dictionary<string, Func<string, List<Result>>> _terms = new Dictionary<string, Func<string, List<Result>>>();
+        private readonly Dictionary<string, Func<string, List<Result>>> _terms = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, Func<string, Task<List<Result>>>> _expensiveTerms = new(StringComparer.InvariantCultureIgnoreCase);
 
         private const string SpotifyIcon = "icon.png";
 
         private string currentUserId; //Required for playlist querying
 
-        private bool optimizeclientUsage = true;   //Flag to limit client calls to X ms after a keystroke 
-                                                //Set to 'false' to stop optimizing client calls
+        private bool optimizeclientUsage = true; //Flag to limit client calls to X ms after a keystroke 
+        //Set to 'false' to stop optimizing client calls
 
         private DateTime lastQueryTime; //Record the time on every query
-                                        //Almost every keypress counts as a new query
+        //Almost every keypress counts as a new query
 
-        private int optimzeclientKeyDelay = 500; //Time to wait before issuing an expensive query
+        private const int OptimizeClientKeyDelay = 200; //Time to wait before issuing an expensive query
         private int cachedVolume = -1;
 
-        
-        private String[] expensiveSearchTerms = {"artist","album","track","playlist", "queue"};  //Specify expensive search terms for optimizing client usage
-                                                                                        //Wait for delay before querying 
+        //Wait for delay before querying 
+        //Specify expensive search terms for optimizing client usage
+        private readonly string[] expensiveSearchTerms =
+        {
+            "artist", "album", "track", "playlist", "queue"
+        };
 
-        public void Init(PluginInitContext context)
+
+        public Task InitAsync(PluginInitContext context)
         {
             _context = context;
             lastQueryTime = DateTime.UtcNow;
 
             // initialize data, passing it the plugin directory
-            Task.Run(() => _client = new SpotifyPluginClient(_context.CurrentPluginMetadata.PluginDirectory));
+            Task.Run(() => _client = new SpotifyPluginClient(context.API, _context.CurrentPluginMetadata.PluginDirectory));
 
-            _terms.Add("artist", SearchArtist);
-            _terms.Add("album", SearchAlbum);
-            _terms.Add("playlist", SearchPlaylist);
-            _terms.Add("track", SearchTrack);
+            _expensiveTerms.Add("artist", SearchArtist);
+            _expensiveTerms.Add("album", SearchAlbum);
+            _expensiveTerms.Add("track", SearchTrack);
+            _expensiveTerms.Add("playlist", SearchPlaylist);
+            _expensiveTerms.Add("device", GetDevices);
+            _expensiveTerms.Add("queue", QueueSearch);
+
             _terms.Add("next", PlayNext);
-	        _terms.Add("last", PlayLast);
+            _terms.Add("last", PlayLast);
             _terms.Add("pause", Pause);
             _terms.Add("play", Play);
             _terms.Add("mute", ToggleMute);
             _terms.Add("vol", SetVolume);
             _terms.Add("volume", SetVolume);
-            _terms.Add("device", GetDevices);
             _terms.Add("shuffle", ToggleShuffle);
-            _terms.Add("queue", QueueSearch);
 
             //view query count and average query duration
             _terms.Add("diag", q =>
                 SingleResult($"Query Count: {context.CurrentPluginMetadata.QueryCount}",
-                $"Avg. Query Time: {context.CurrentPluginMetadata.AvgQueryTime}ms",
-                null));
+                    $"Avg. Query Time: {context.CurrentPluginMetadata.AvgQueryTime}ms",
+                    null));
 
             _terms.Add("reconnect", q =>
-                SingleResult("Reconnect","Force a reconnection and remove the refresh token",reconnectAction(_client, false))
-                );
+                SingleResult("Reconnect", "Force a reconnection and remove the refresh token", ReconnectAction(_client, false))
+            );
+
+            return Task.CompletedTask;
         }
 
         private List<Result> Play(string arg) =>
@@ -78,54 +87,56 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private List<Result> PlayLast(string arg) =>
             SingleResult("Last", "Skip Backwards", _client.SkipBack);
 
-        public List<Result> Query(Query query)
+        public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
         {
-            //Record the time the query was issued
-            lastQueryTime = DateTime.UtcNow;
-            DateTime thisQueryStartTime = DateTime.UtcNow;
-
             if (!_client.ApiConnected)
             {
-                return SingleResult("Spotify client unreachable", "Select to re-authorize", reconnectAction(_client));
+                return SingleResult("Spotify client unreachable", "Select to re-authorize", ReconnectAction(_client), false);
             }
 
             if (!_client.TokenValid)
             {
-                return SingleResult("Spotify client Token Expired", "Select to re-authorize", reconnectAction(_client));
+                return SingleResult("Spotify client Token Expired", "Select to re-authorize", ReconnectAction(_client), false);
             }
 
             try
             {
+                List<Result> results;
+
                 // display status if no parameters are added
                 if (string.IsNullOrWhiteSpace(query.Search))
                 {
                     return GetPlaying();
                 }
-                
+
                 //Run the query if it is not an expensive search term
-                if(_terms.ContainsKey(query.FirstSearch) && !expensiveSearchTerms.Contains(query.FirstSearch)){
-                    var results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
-                    return results;                    
-                }
-
-                //If query is expensive, AND if optimizeclientUsage is flagged
-                //  return null if query is updated within set number ms
-                //  this limits the client calls made
-                //  if you type a 10 character query quickly enough, only the last keypress searches the Spotify client
-                if(optimizeclientUsage){
-                    System.Threading.Thread.Sleep(optimzeclientKeyDelay);
-                    if(lastQueryTime > thisQueryStartTime){
-                        return null;
-                    }
-                }
-
                 if (_terms.ContainsKey(query.FirstSearch))
                 {
-                    var results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
+                    results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
                     return results;
                 }
 
-                return SearchAll(query.Search);
+                //If query is expensive, AND if optimize client Usage is flagged
+                //  return null if query is updated within set number ms
+                //  this limits the client calls made
+                //  if you type a 10 character query quickly enough, only the last keypress searches the Spotify client
+                if (optimizeclientUsage)
+                {
+                    await Task.Delay(OptimizeClientKeyDelay, token);
+                    if (token.IsCancellationRequested)
+                        return null;
+                }
+
+                if (_expensiveTerms.ContainsKey(query.FirstSearch))
+                {
+                    results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
+                    return results;
+                }
+
+
+                return await SearchAllAsync(query.Search);
+
+
             }
             catch (Exception e)
             {
@@ -133,7 +144,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
 
             //If searches run into an exception, return results not found Result
-            return NothingFoundResult; 
+            return NothingFoundResult;
         }
 
         private List<Result> GetPlaying()
@@ -142,35 +153,31 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             if (d == null)
             {
                 //Must have an active device to control Spotify
-                return SingleResult("No active device","Select device with `sp device`",()=>{});
+                return SingleResult("No active device", "Select device with `sp device`", () => { });
             }
 
             var item = _client.PlaybackContext.Item;
-            if (item == null)
-            {
-                return SingleResult("Nothing playing",$"Active Device: {d}",()=>{});
-            }
 
-            FullTrack t = (item is FullTrack track ? track : null);
-            FullEpisode e = (item is FullEpisode episode ? episode : null);
+            var t = item as FullTrack;
+            var e = item as FullEpisode;
 
             var status = _client.PlaybackContext.IsPlaying ? "Now Playing" : "Paused";
             var toggleAction = _client.PlaybackContext.IsPlaying ? "Pause" : "Resume";
 
             // Check if item is a track, episode, or default icon if neither work
-            var icon = ( t != null ? _client.GetArtworkAsync(t) : 
-                         e != null ? _client.GetArtworkAsync(e) :
-                         null );
+            var icon = (t != null ? _client.GetArtworkAsync(t) :
+                e != null ? _client.GetArtworkAsync(e) :
+                null);
 
             return new List<Result>()
             {
-                new Result()
+                new()
                 {
-                    Title = t.Name,
-                    SubTitle = $"{status} | by {String.Join(", ",t.Artists.Select(a => String.Join("",a.Name)))}",
+                    Title = t?.Name ?? e?.Name ?? "Not Available",
+                    SubTitle = $"{status} | by {string.Join(", ", t.Artists.Select(a => String.Join("", a.Name)))}",
                     IcoPath = (icon != null ? icon.Result : SpotifyIcon)
                 },
-                new Result()
+                new()
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Pause / Resume",
@@ -184,7 +191,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                         return true;
                     }
                 },
-                new Result()
+                new()
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Next",
@@ -195,7 +202,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                         return true;
                     }
                 },
-                new Result()
+                new()
                 {
                     IcoPath = SpotifyIcon,
                     Title = "Last",
@@ -220,16 +227,19 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         private List<Result> SetVolume(string arg = null)
         {
-            if (Int32.TryParse(arg, out int tempInt)){
-                if (tempInt >= 0 && tempInt <= 100){
-                    return SingleResult($"Set Volume to {tempInt}",$"Current Volume: {cachedVolume}", ()=>{
+            if (int.TryParse(arg, out var tempInt))
+            {
+                if (tempInt is >= 0 and <= 100)
+                {
+                    return SingleResult($"Set Volume to {tempInt}", $"Current Volume: {cachedVolume}", () =>
+                    {
                         _client.SetVolume(tempInt);
-                        });
+                    });
                 }
             }
 
             cachedVolume = _client.CurrentVolume;
-            return SingleResult($"Volume", $"Current Volume: {cachedVolume}", ()=>{});
+            return SingleResult($"Volume", $"Current Volume: {cachedVolume}", () => { });
         }
 
         private List<Result> ToggleShuffle(string arg = null)
@@ -238,7 +248,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return SingleResult("Toggle Shuffle", $"Turn Shuffle {toggleAction}", _client.ToggleShuffle);
         }
 
-        private List<Result> SearchAll(string param)
+        private async Task<List<Result>> SearchAllAsync(string param)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -248,7 +258,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
 
             // Retrieve data and return the first 20 results
-            var searchResults = _client.SearchAll(param).Result;
+            var searchResults = await _client.SearchAll(param);
             var results = searchResults.Select(async x => new Result()
             {
                 Title = x.Title,
@@ -261,12 +271,13 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }
             }).ToArray();
 
-            Task.WaitAll(results);
-            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+            await Task.WhenAll(results);
+
+            return results.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
-        private List<Result> SearchTrack(string param) => SearchTrack(param, false);
-        private List<Result> SearchTrack(string param, bool shouldQueue = false)
+        private Task<List<Result>> SearchTrack(string param) => SearchTrack(param, false);
+        private async Task<List<Result>> SearchTrack(string param, bool shouldQueue = false)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -280,7 +291,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             var results = searchResults.Select(async x => new Result()
             {
                 Title = x.Name,
-                SubTitle = (shouldQueue ? "Queue track by " : "") + 
+                SubTitle = (shouldQueue ? "Queue track by " : "") +
                            "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name)),
                 IcoPath = await _client.GetArtworkAsync(x),
                 Action = _ =>
@@ -293,11 +304,11 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }
             }).ToArray();
 
-            Task.WaitAll(results);
-            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+            await Task.WhenAll(results);
+            return results.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
-        private List<Result> SearchAlbum(string param)
+        private async Task<List<Result>> SearchAlbum(string param)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -317,14 +328,14 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 {
                     _client.Play(x.Uri);
                     return true;
-                }                
+                }
             }).ToArray();
 
-            Task.WaitAll(results);
-            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+            await Task.WhenAll(results);
+            return searchResults.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
-        private List<Result> SearchArtist(string param)
+        private async Task<List<Result>> SearchArtist(string param)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -348,9 +359,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }
             });
 
-            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+            await Task.WhenAll(results);
+            return searchResults.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
-        private List<Result> SearchPlaylist(string param)
+        private async Task<List<Result>> SearchPlaylist(string param)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -370,20 +382,20 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 {
                     _client.Play(x.Uri);
                     return true;
-                }                
+                }
             }).ToArray();
 
-            Task.WaitAll(results);
-            return (results.Count() > 0) ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+            await Task.WhenAll(results);
+            return searchResults.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
-        private List<Result> GetDevices(string param = null)
+        private async Task<List<Result>> GetDevices(string param = null)
         {
             //Retrieve all available devices
             List<Device> allDevices = _client.GetDevices();
-            if (allDevices == null || allDevices.Count == 0) return SingleResult("No devices found on Spotify.","Reconnect to client",reconnectAction(_client));
+            if (allDevices == null || allDevices.Count == 0) return SingleResult("No devices found on Spotify.", "Reconnect to client", ReconnectAction(_client));
 
-            var results = _client.GetDevices().Where( device => !device.IsRestricted).Select(async x => new Result()
+            var results = _client.GetDevices().Where(device => !device.IsRestricted).Select(async x => new Result()
             {
                 Title = $"{x.Type}  {x.Name}",
                 SubTitle = x.IsActive ? "Active Device" : "Inactive",
@@ -394,24 +406,29 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 {
                     _client.SetDevice(x.Id);
                     return true;
-                }                
+                }
             }).ToArray();
 
-            Task.WaitAll(results);
-            return results.Select(x => x.Result).ToList();
+            await Task.WhenAll(results);
+            return allDevices.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
-        
+
         //Return a generic reconnection action
-        private Action reconnectAction(SpotifyPluginClient client, bool keepRefreshToken = true){
+        private Action ReconnectAction(SpotifyPluginClient client, bool keepRefreshToken = true)
+        {
             return () =>
             {
-                Task connectTask = client.ConnectWebClient(keepRefreshToken);
+                var connectTask = client.ConnectWebClient(keepRefreshToken);
                 //Assign client ID asynchronously when connection finishes
-                connectTask.ContinueWith((connectResult) => { 
-                    try{
+                connectTask.ContinueWith((connectResult) =>
+                {
+                    try
+                    {
                         currentUserId = client.UserID;
+                        _context.API.ChangeQuery(_context.CurrentPluginMetadata.ActionKeywords[0] + " ", true);
                     }
-                    catch{
+                    catch
+                    {
                         Console.WriteLine("Failed to write client ID");
                     }
                 });
@@ -419,17 +436,17 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         }
 
         private List<Result> AuthenticateResult =>
-            SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", reconnectAction(_client));
+            SingleResult("Authentication required to search the Spotify library", "Click this to authenticate", ReconnectAction(_client));
 
 
 
         // Returns a SingleResult if no search results are found
         private List<Result> NothingFoundResult =>
-            SingleResult("No results found on Spotify.", "Please try refining your search", () => {});
-            
+            SingleResult("No results found on Spotify.", "Please try refining your search", () => { });
+
         // Returns a list with a single result
-        private List<Result> SingleResult(string title, string subtitle = "", Action action = default(Action)) =>
-            new List<Result>()
+        private List<Result> SingleResult(string title, string subtitle = "", Action action = default, bool hideAfterAction = true) =>
+            new()
             {
                 new Result()
                 {
@@ -439,12 +456,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Action = _ =>
                     {
                         action();
-                        return true;
+                        return hideAfterAction;
                     }
                 }
-            }; 
+            };
 
-        private List<Result> QueueSearch(string param)
+        private async Task<List<Result>> QueueSearch(string param)
         {
             if (!_client.ApiConnected) return AuthenticateResult;
 
@@ -453,9 +470,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return SingleResult("sp queue {trackname}", "Search for a track to add it to your play queue.");
             }
 
-            var results = SearchTrack(param, true);
+            var results = await SearchTrack(param, true);
 
-            return (results.Count() > 0) ? results : NothingFoundResult;
+            return results.Any() ? results : NothingFoundResult;
         }
 
     }

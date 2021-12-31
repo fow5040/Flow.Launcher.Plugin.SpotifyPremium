@@ -12,6 +12,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 {
     public class SpotifyPluginClient
     {
+        private readonly IPublicAPI _api;
         private SpotifyClient _spotifyClient;
         private readonly object _lock = new object();
         private int mLastVolume = 10;
@@ -19,8 +20,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private string pluginDirectory;
         private const string UnknownIcon = "icon.png";
 
-        public SpotifyPluginClient(string pluginDir = null)
+        public SpotifyPluginClient(IPublicAPI api, string pluginDir = null)
         {
+            _api = api;
             pluginDirectory = pluginDir ?? Directory.GetCurrentDirectory();
             CacheFolder = Path.Combine(pluginDirectory, "Cache");
 
@@ -135,9 +137,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         // Due to API Enhancements, the Spotify API can now return FullEpisodes or FullTracks 
         //   which have different parameters, requiring casting within the Play method
-        public void Play(String uri)
+        public void Play(string uri)
         {
-            PlayerResumePlaybackRequest startSongRequest = new PlayerResumePlaybackRequest();
+            var startSongRequest = new PlayerResumePlaybackRequest();
 
             //Uses contextUri for playlists, artists, albums, otherwise regular URI
             if(uri.Contains(":track:")){
@@ -217,7 +219,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             _securityStore = SecurityStore.Load(pluginDirectory);
 
-            EmbedIOAuthServer _server = new EmbedIOAuthServer(new Uri("http://localhost:4002/callback"), 4002);
+            var server = new EmbedIOAuthServer(new Uri("http://localhost:4002/callback"), 4002);
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
@@ -233,17 +235,17 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
             else
             {
-                await _server.Start();
+                await server.Start();
 
-                _server.AuthorizationCodeReceived += async (object sender, AuthorizationCodeResponse response) =>
+                server.AuthorizationCodeReceived += async (_, response) =>
                 {
-                    await _server.Stop();
+                    await server.Stop();
 
-                    AuthorizationCodeTokenResponse token = await new OAuthClient().RequestToken(
+                    var token = await new OAuthClient().RequestToken(
                         new AuthorizationCodeTokenRequest(_securityStore.ClientId,
                                                           _securityStore.ClientSecret,
                                                           response.Code,
-                                                          _server.BaseUri));
+                                                          server.BaseUri));
                     lock(_lock)
                     {
                         _securityStore.RefreshToken = token.RefreshToken;
@@ -252,13 +254,13 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     }
                 };
 
-                _server.ErrorReceived += async (object sender, string error, string state) =>
+                server.ErrorReceived += async (sender, error, state) =>
                 {
                     Console.WriteLine($"Aborting authorization, error received: {error}");
-                    await _server.Stop();
+                    await server.Stop();
                 };
 
-                var request = new LoginRequest(_server.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
+                var request = new LoginRequest(server.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
                 {
                     Scope = new List<string> { UserLibraryRead,
                                                UserReadEmail,
@@ -271,7 +273,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                                                PlaylistReadPrivate }
                 };
 
-                Uri uri = request.ToUri();
+                var uri = request.ToUri();
                 try {
                     BrowserUtil.Open(uri);
                 } catch (Exception) {
@@ -317,7 +319,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
             //Add Featured playlists that contain the query
             returnedPlaylists = returnedPlaylists.Concat(
-                featuredPlaylists.ToList<SimplePlaylist>().Where(
+                featuredPlaylists.ToList().Where(
                     playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList()).ToList();
 
             return returnedPlaylists;
@@ -325,14 +327,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public async Task<List<SpotifySearchResult>> SearchAll(string s)
         {
-            string q = String.Concat(s.Replace(' ','+'),"*");
-            var searchRequest = new SearchRequest( SearchRequest.Types.All, q);
-            searchRequest.Limit = 3;
+            var q = $"{s.Replace(' ', '+')}*";
+            var searchRequest = new SearchRequest( SearchRequest.Types.All, q)
+            {
+                Limit = 3
+            };
             var searchResponse = await _spotifyClient.Search.Item(searchRequest);
 
-            List<SpotifySearchResult> returnResults = new List<SpotifySearchResult>(); 
+            var returnResults = new List<SpotifySearchResult>(); 
 
-            if(searchResponse.Albums.Items.Count() > 0){
+            if(searchResponse.Albums.Items?.Count > 0){
                 returnResults.AddRange(searchResponse.Albums.Items.Select(x => new SpotifySearchResult()
                 {
                     Title = $"Album  :  {x.Name}",
@@ -344,7 +348,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }).ToList());
             }
 
-            if(searchResponse.Artists.Items.Count() > 0){
+            if(searchResponse.Artists.Items?.Count > 0){
                 returnResults.AddRange(searchResponse.Artists.Items.Select( x => new SpotifySearchResult()
                 {
                     Title = $"Artist  :  {x.Name}",
@@ -356,7 +360,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }).ToList());
             }
 
-            if(searchResponse.Tracks.Items.Count() > 0){
+            if(searchResponse.Tracks.Items?.Count > 0){
                 returnResults.AddRange(searchResponse.Tracks.Items.Select( x => new SpotifySearchResult()
                 {
                     Title = $"Track  :  {x.Name}",
@@ -368,7 +372,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }).ToList());
             }
 
-            if(searchResponse.Playlists.Items.Count() > 0){
+            if(searchResponse.Playlists.Items?.Count > 0){
                 returnResults.AddRange(searchResponse.Playlists.Items.Select( x => new SpotifySearchResult()
                 {
                     Title = $"Playlist :  {x.Name}",
@@ -411,10 +415,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public Task<string> GetArtworkAsync(SpotifySearchResult searchResult) => GetArtworkAsync(searchResult.Images,searchResult.Uri);
 
-        public Task<string> GetArtworkAsync(List<Image> images, string uri)
+        private Task<string> GetArtworkAsync(List<Image> images, string uri)
         {
             if (!images.Any()){
-                return Task<string>.Run( () => UnknownIcon );
+                return Task.Run( () => UnknownIcon );
             }
 
             var url = images.Last().Url;
@@ -430,7 +434,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return await DownloadImageAsync(uniqueId, url);
         }
 
-        private static string GetUniqueIdForArtwork(string uri) => uri.Substring(uri.LastIndexOf(":", StringComparison.Ordinal) + 1);
+        private static string GetUniqueIdForArtwork(string uri) => uri[(uri.LastIndexOf(":", StringComparison.Ordinal) + 1)..];
 
         private async Task<string> DownloadImageAsync(string uniqueId, string url)
         {
@@ -442,10 +446,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return path;
             }
 
-            using (var wc = new WebClient())
-            {
-                await wc.DownloadFileTaskAsync(new Uri(url), path);
-            }
+            using var wc = new WebClient();
+            await wc.DownloadFileTaskAsync(new Uri(url), path);
 
             return path;
         }
