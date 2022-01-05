@@ -106,7 +106,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 // display status if no parameters are added
                 if (string.IsNullOrWhiteSpace(query.Search))
                 {
-                    return GetPlaying();
+                    return await GetPlaying();
                 }
 
                 //Run the query if it is not an expensive search term
@@ -129,7 +129,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
                 if (_expensiveTerms.ContainsKey(query.FirstSearch))
                 {
-                    results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
+                    results = await _expensiveTerms[query.FirstSearch].Invoke(query.SecondToEndSearch);
                     return results;
                 }
 
@@ -147,13 +147,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return NothingFoundResult;
         }
 
-        private List<Result> GetPlaying()
+        private async Task<List<Result>> GetPlaying()
         {
-            var d = _client.ActiveDeviceName;
+            var d = await _client.GetActiveDeviceNameAsync();
             if (d == null)
             {
                 //Must have an active device to control Spotify
-                return SingleResult("No active device", "Select device with `sp device`", () => { });
+                return SingleResult("No active device", "Select device with `sp device`", () =>
+                {
+                    _context.API.ChangeQuery($"{_context.CurrentPluginMetadata.ActionKeywords[0]} device");
+                }, false);
             }
 
             var item = _client.PlaybackContext.Item;
@@ -165,9 +168,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             var toggleAction = _client.PlaybackContext.IsPlaying ? "Pause" : "Resume";
 
             // Check if item is a track, episode, or default icon if neither work
-            var icon = (t != null ? _client.GetArtworkAsync(t) :
+            var icon = t != null ? _client.GetArtworkAsync(t) :
                 e != null ? _client.GetArtworkAsync(e) :
-                null);
+                null;
 
             return new List<Result>()
             {
@@ -372,7 +375,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
 
             // Retrieve data and return the first 500 playlists
-            var searchResults = _client.GetPlaylists(param).Result;
+            var searchResults = await _client.GetPlaylists(param);
             var results = searchResults.Select(async x => new Result()
             {
                 Title = x.Name,
@@ -392,10 +395,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private async Task<List<Result>> GetDevices(string param = null)
         {
             //Retrieve all available devices
-            List<Device> allDevices = _client.GetDevices();
-            if (allDevices == null || allDevices.Count == 0) return SingleResult("No devices found on Spotify.", "Reconnect to client", ReconnectAction(_client));
+            var allDevices = await _client.GetDevicesAsync();
+            if (allDevices.Count == 0) return SingleResult("No devices found on Spotify.", "Reconnect to client", ReconnectAction(_client));
 
-            var results = _client.GetDevices().Where(device => !device.IsRestricted).Select(async x => new Result()
+            var results = allDevices.Where(device => !device.IsRestricted).Select(x => new Result
             {
                 Title = $"{x.Type}  {x.Name}",
                 SubTitle = x.IsActive ? "Active Device" : "Inactive",
@@ -404,34 +407,31 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 IcoPath = SpotifyIcon,
                 Action = _ =>
                 {
-                    _client.SetDevice(x.Id);
+                    _client.SetDevice(x.Id).GetAwaiter().GetResult();
                     return true;
                 }
-            }).ToArray();
+            }).ToList();
 
-            await Task.WhenAll(results);
-            return allDevices.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+            return results.Any() ? results : NothingFoundResult;
         }
 
         //Return a generic reconnection action
         private Action ReconnectAction(SpotifyPluginClient client, bool keepRefreshToken = true)
         {
-            return () =>
+            // ReSharper disable once AsyncVoidLambda
+            return async () =>
             {
-                var connectTask = client.ConnectWebClient(keepRefreshToken);
+                await client.ConnectWebClient(keepRefreshToken);
                 //Assign client ID asynchronously when connection finishes
-                connectTask.ContinueWith((connectResult) =>
+                try
                 {
-                    try
-                    {
-                        currentUserId = client.UserID;
-                        _context.API.ChangeQuery(_context.CurrentPluginMetadata.ActionKeywords[0] + " ", true);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("Failed to write client ID");
-                    }
-                });
+                    currentUserId = await client.GetUserIdAsync();
+                    _context.API.ChangeQuery(_context.CurrentPluginMetadata.ActionKeywords[0] + " ", true);
+                }
+                catch
+                {
+                    Console.WriteLine("Failed to write client ID");
+                }
             };
         }
 
@@ -445,7 +445,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             SingleResult("No results found on Spotify.", "Please try refining your search", () => { });
 
         // Returns a list with a single result
-        private List<Result> SingleResult(string title, string subtitle = "", Action action = default, bool hideAfterAction = true) =>
+        private static List<Result> SingleResult(string title, string subtitle = "", Action action = default, bool hideAfterAction = true) =>
             new()
             {
                 new Result()
@@ -455,7 +455,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     IcoPath = SpotifyIcon,
                     Action = _ =>
                     {
-                        action();
+                        action?.Invoke();
                         return hideAfterAction;
                     }
                 }
