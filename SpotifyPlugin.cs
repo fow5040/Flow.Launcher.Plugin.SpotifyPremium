@@ -428,7 +428,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private async Task ReconnectAsync()
         {
             if (authSemaphore.CurrentCount == 0)
+            {
+                await authSemaphore.WaitAsync();
                 return;
+            }
             await authSemaphore.WaitAsync();
             await _client.ConnectWebClient();
             currentUserId = await _client.GetUserIdAsync();
