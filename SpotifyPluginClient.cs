@@ -39,37 +39,43 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return PlaybackContext.Device.VolumePercent == 0;
             }
         }
-        
+
         public bool ShuffleStatus
         {
-            get{
+            get
+            {
                 return PlaybackContext.ShuffleState;
             }
         }
 
         public int CurrentVolume
         {
-            get{
-                return (int) PlaybackContext.Device.VolumePercent ;  //Device.VolumePercent;
+            get
+            {
+                return (int)PlaybackContext.Device.VolumePercent; //Device.VolumePercent;
             }
         }
 
-        public CurrentlyPlayingContext PlaybackContext {
+        public CurrentlyPlayingContext PlaybackContext
+        {
             get
             {
                 return _spotifyClient.Player.GetCurrentPlayback().GetAwaiter().GetResult();
             }
         }
 
-        public String CurrentPlaybackName {
+        public String CurrentPlaybackName
+        {
             get
             {
-                IPlayableItem item =  _spotifyClient.Player.GetCurrentPlayback().GetAwaiter().GetResult().Item;
-                if (item is FullTrack track){
+                IPlayableItem item = _spotifyClient.Player.GetCurrentPlayback().GetAwaiter().GetResult().Item;
+                if (item is FullTrack track)
+                {
                     return track.Name;
                 }
 
-                if (item is FullEpisode episode){
+                if (item is FullEpisode episode)
+                {
                     return episode.Name;
                 }
 
@@ -78,47 +84,36 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
-        public String ActiveDeviceName{
-            get
-            {
-                //Returns null, or active device string
-                DeviceResponse allDevices = _spotifyClient.Player.GetAvailableDevices().GetAwaiter().GetResult();
-                if (allDevices.Devices == null) return null;
-                
-                Device ActiveDevice = allDevices.Devices.FindLast( device => device.IsActive);
-                return (ActiveDevice != null) ? ActiveDevice.Name : null;
-            }
+        public async Task<string> GetActiveDeviceNameAsync()
+        {
+            //Returns null, or active device string
+            var allDevices = await _spotifyClient.Player.GetAvailableDevices();
+            if (!allDevices.Devices.Any()) return null;
+
+            var activeDevice = allDevices.Devices.FindLast(device => device.IsActive);
+            return activeDevice?.Name;
         }
 
-        public String UserID{
-            get
-            {
-                return _spotifyClient.UserProfile.Current().GetAwaiter().GetResult().Id;
-            }
-        }
+        public async Task<string> GetUserIdAsync() => (await _spotifyClient.UserProfile.Current()).Id;
 
 
         private string CacheFolder { get; }
 
-        public bool ApiConnected
-        {
-            get
-            {
-                return _spotifyClient != null;
-            }
-        }
+        public bool ApiConnected => _spotifyClient != null;
 
         public bool TokenValid
         {
             get
             {
                 //Hit a lightweight endpoint to see if the current token is still valid
-                try {
+                try
+                {
                     var prof = _spotifyClient.UserProfile.Current().GetAwaiter().GetResult();
                     return true;
-                    
+
                 }
-                catch (APIUnauthorizedException e) {
+                catch (APIUnauthorizedException e)
+                {
                     return false;
                 }
 
@@ -129,7 +124,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             //Issuing a play command while a track is already playing causes the
             //  Spotify API to return an error
-            if ( ! PlaybackContext.IsPlaying)
+            if (!PlaybackContext.IsPlaying)
             {
                 _spotifyClient.Player.ResumePlayback().GetAwaiter().GetResult();
             }
@@ -142,15 +137,23 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             var startSongRequest = new PlayerResumePlaybackRequest();
 
             //Uses contextUri for playlists, artists, albums, otherwise regular URI
-            if(uri.Contains(":track:")){
-                startSongRequest.Uris = new List<string>(){uri};
+            if (uri.Contains(":track:"))
+            {
+                startSongRequest.Uris = new List<string>()
+                {
+                    uri
+                };
             }
-            else{
+            else
+            {
                 startSongRequest.ContextUri = uri;
             }
-            try {
+            try
+            {
                 _spotifyClient.Player.ResumePlayback(startSongRequest).GetAwaiter().GetResult();
-            } catch (Exception e){
+            }
+            catch (Exception e)
+            {
                 //Expect playing to fail if no device is active
                 Console.WriteLine(e);
                 return;
@@ -162,9 +165,13 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         public void Enqueue(String uri)
         {
             PlayerAddToQueueRequest enqueueRequest = new PlayerAddToQueueRequest(uri);
-            try {
-                _spotifyClient.Player.AddToQueue(enqueueRequest).GetAwaiter().GetResult();;
-            } catch (Exception e){
+            try
+            {
+                _spotifyClient.Player.AddToQueue(enqueueRequest).GetAwaiter().GetResult();
+                ;
+            }
+            catch (Exception e)
+            {
                 //Expect queueing to fail if no device is active
                 Console.WriteLine(e);
             }
@@ -183,16 +190,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         public void SkipBack()
         {
             _spotifyClient.Player.SkipPrevious();
-	    }
+        }
 
         public void ToggleMute()
         {
             Device currentDevice = PlaybackContext.Device;
             PlayerVolumeRequest volRequest;
-            if(currentDevice.VolumePercent != 0)
+            if (currentDevice.VolumePercent != 0)
             {
                 // VolumePercent is nullable for whatever reason - assume to be 100 if null
-                mLastVolume = (currentDevice.VolumePercent != null ? (int) currentDevice.VolumePercent : 100);
+                mLastVolume = (currentDevice.VolumePercent != null ? (int)currentDevice.VolumePercent : 100);
                 volRequest = new PlayerVolumeRequest(0);
             }
             else
@@ -200,19 +207,22 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 volRequest = new PlayerVolumeRequest(mLastVolume);
             }
 
-            _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();;
+            _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();
+            ;
         }
 
         public void SetVolume(int volumePercent = 0)
         {
             var volRequest = new PlayerVolumeRequest(volumePercent);
-            _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();;
+            _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();
+            ;
         }
 
         public void ToggleShuffle()
         {
             var shuffleRequest = new PlayerShuffleRequest(!ShuffleStatus);
-            _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();;
+            _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();
+            ;
         }
 
         public async Task ConnectWebClient(bool keepRefreshToken = true)
@@ -223,12 +233,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
-                
-                var refreshRequest = new AuthorizationCodeRefreshRequest(_securityStore.ClientId, 
-                                                                         _securityStore.ClientSecret,
-                                                                         _securityStore.RefreshToken);
-                var refreshResponse = await new OAuthClient().RequestToken(refreshRequest) ;
-                lock(_lock)
+
+                var refreshRequest = new AuthorizationCodeRefreshRequest(_securityStore.ClientId,
+                    _securityStore.ClientSecret,
+                    _securityStore.RefreshToken);
+                var refreshResponse = await new OAuthClient().RequestToken(refreshRequest);
+                lock (_lock)
                 {
                     _spotifyClient = new SpotifyClient(refreshResponse.AccessToken);
                 }
@@ -243,10 +253,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
                     var token = await new OAuthClient().RequestToken(
                         new AuthorizationCodeTokenRequest(_securityStore.ClientId,
-                                                          _securityStore.ClientSecret,
-                                                          response.Code,
-                                                          server.BaseUri));
-                    lock(_lock)
+                            _securityStore.ClientSecret,
+                            response.Code,
+                            server.BaseUri));
+                    lock (_lock)
                     {
                         _securityStore.RefreshToken = token.RefreshToken;
                         _securityStore.Save(pluginDirectory);
@@ -262,43 +272,51 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
                 var request = new LoginRequest(server.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
                 {
-                    Scope = new List<string> { UserLibraryRead,
-                                               UserReadEmail,
-                                               UserReadPrivate,
-                                               UserReadPlaybackPosition,
-                                               UserReadCurrentlyPlaying,
-                                               UserReadPlaybackState,
-                                               UserModifyPlaybackState,
-                                               AppRemoteControl,
-                                               PlaylistReadPrivate }
+                    Scope = new List<string>
+                    {
+                        UserLibraryRead,
+                        UserReadEmail,
+                        UserReadPrivate,
+                        UserReadPlaybackPosition,
+                        UserReadCurrentlyPlaying,
+                        UserReadPlaybackState,
+                        UserModifyPlaybackState,
+                        AppRemoteControl,
+                        PlaylistReadPrivate
+                    }
                 };
 
                 var uri = request.ToUri();
-                try {
+                try
+                {
                     BrowserUtil.Open(uri);
-                } catch (Exception) {
+                }
+                catch (Exception)
+                {
                     Console.WriteLine("Unable to open URL, manually open: {0}", uri);
-                };
-            };
+                }
+                ;
+            }
+            ;
 
         }
 
         public async Task<List<FullArtist>> GetArtists(string s)
         {
-            var searchRequest = new SearchRequest( SearchRequest.Types.Artist, s);
+            var searchRequest = new SearchRequest(SearchRequest.Types.Artist, s);
             var searchResponse = await _spotifyClient.Search.Item(searchRequest);
             return searchResponse.Artists.Items;
         }
         public async Task<List<SimpleAlbum>> GetAlbums(string s)
         {
-            var searchRequest = new SearchRequest( SearchRequest.Types.Album, s);
+            var searchRequest = new SearchRequest(SearchRequest.Types.Album, s);
             var searchResponse = await _spotifyClient.Search.Item(searchRequest);
             return searchResponse.Albums.Items;
         }
 
         public async Task<List<FullTrack>> GetTracks(string s)
         {
-            var searchRequest = new SearchRequest( SearchRequest.Types.Track, s);
+            var searchRequest = new SearchRequest(SearchRequest.Types.Track, s);
             var searchResponse = await _spotifyClient.Search.Item(searchRequest);
             return searchResponse.Tracks.Items;
         }
@@ -306,21 +324,22 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         public async Task<List<SimplePlaylist>> GetPlaylists(string s)
         {
 
-            var featuredPlaylists = _spotifyClient.Browse.GetFeaturedPlaylists().Result.Playlists.Items;
+            var featuredPlaylists = (await _spotifyClient.Browse.GetFeaturedPlaylists()).Playlists.Items;
             var userPlaylistsPage = await _spotifyClient.Playlists.CurrentUsers();
             var userPlaylists = await _spotifyClient.PaginateAll(userPlaylistsPage);
-            List<SimplePlaylist> returnedPlaylists = new List<SimplePlaylist>();
+            var returnedPlaylists = new List<SimplePlaylist>();
 
             //Add User playlists that contain the query
-            returnedPlaylists = returnedPlaylists.Concat(
+            returnedPlaylists.AddRange(
                 userPlaylists.Where(
-                    playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList()).ToList();
-            
+                    playlist => playlist.Name.Contains(s, StringComparison.InvariantCultureIgnoreCase)));
+
 
             //Add Featured playlists that contain the query
-            returnedPlaylists = returnedPlaylists.Concat(
-                featuredPlaylists.ToList().Where(
-                    playlist => playlist.Name.ToLower().Contains(s.ToLower())).ToList()).ToList();
+            if (featuredPlaylists != null)
+                returnedPlaylists.AddRange(
+                    featuredPlaylists.Where(
+                        playlist => playlist.Name.Contains(s, StringComparison.InvariantCultureIgnoreCase)));
 
             return returnedPlaylists;
         }
@@ -328,15 +347,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         public async Task<List<SpotifySearchResult>> SearchAll(string s)
         {
             var q = $"{s.Replace(' ', '+')}*";
-            var searchRequest = new SearchRequest( SearchRequest.Types.All, q)
+            var searchRequest = new SearchRequest(SearchRequest.Types.All, q)
             {
                 Limit = 3
             };
             var searchResponse = await _spotifyClient.Search.Item(searchRequest);
 
-            var returnResults = new List<SpotifySearchResult>(); 
+            var returnResults = new List<SpotifySearchResult>();
 
-            if(searchResponse.Albums.Items?.Count > 0){
+            if (searchResponse.Albums.Items?.Count > 0)
+            {
                 returnResults.AddRange(searchResponse.Albums.Items.Select(x => new SpotifySearchResult()
                 {
                     Title = $"Album  :  {x.Name}",
@@ -345,11 +365,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Name = x.Name,
                     Uri = x.Uri,
                     Images = x.Images
-                }).ToList());
+                }));
             }
 
-            if(searchResponse.Artists.Items?.Count > 0){
-                returnResults.AddRange(searchResponse.Artists.Items.Select( x => new SpotifySearchResult()
+            if (searchResponse.Artists.Items?.Count > 0)
+            {
+                returnResults.AddRange(searchResponse.Artists.Items.Select(x => new SpotifySearchResult()
                 {
                     Title = $"Artist  :  {x.Name}",
                     Subtitle = $"Artist Radio: {x.Name}",
@@ -357,11 +378,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Name = x.Name,
                     Uri = x.Uri,
                     Images = x.Images
-                }).ToList());
+                }));
             }
 
-            if(searchResponse.Tracks.Items?.Count > 0){
-                returnResults.AddRange(searchResponse.Tracks.Items.Select( x => new SpotifySearchResult()
+            if (searchResponse.Tracks.Items?.Count > 0)
+            {
+                returnResults.AddRange(searchResponse.Tracks.Items.Select(x => new SpotifySearchResult()
                 {
                     Title = $"Track  :  {x.Name}",
                     Subtitle = $"Album: {x.Album.Name}, by: " + string.Join(", ", x.Artists.Select(a => a.Name)),
@@ -369,11 +391,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Name = x.Name,
                     Uri = x.Uri,
                     Images = x.Album.Images
-                }).ToList());
+                }));
             }
 
-            if(searchResponse.Playlists.Items?.Count > 0){
-                returnResults.AddRange(searchResponse.Playlists.Items.Select( x => new SpotifySearchResult()
+            if (searchResponse.Playlists.Items?.Count > 0)
+            {
+                returnResults.AddRange(searchResponse.Playlists.Items.Select(x => new SpotifySearchResult
                 {
                     Title = $"Playlist :  {x.Name}",
                     Subtitle = $"Playlist by: {x.Owner.DisplayName} | {x.Tracks.Total} songs",
@@ -381,25 +404,22 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Name = x.Name,
                     Uri = x.Uri,
                     Images = x.Images
-                }).ToList());
+                }));
             }
 
             return returnResults;
 
         }
 
-        public List<Device> GetDevices()
-        {
-            lock (_lock)
-            {
-                return _spotifyClient.Player.GetAvailableDevices().Result.Devices;
-            }
-        }
+        public async Task<List<Device>> GetDevicesAsync() => (await _spotifyClient.Player.GetAvailableDevices()).Devices;
 
-        public void SetDevice(string deviceId = "")
+        public async Task SetDevice(string deviceId = "")
         {
-            var transferRequest = new PlayerTransferPlaybackRequest(new List<string>{deviceId});
-            _spotifyClient.Player.TransferPlayback(transferRequest).GetAwaiter().GetResult();;
+            var transferRequest = new PlayerTransferPlaybackRequest(new List<string>
+            {
+                deviceId
+            });
+            await _spotifyClient.Player.TransferPlayback(transferRequest);
         }
 
         public Task<string> GetArtworkAsync(SimpleAlbum album) => GetArtworkAsync(album.Images, album.Uri);
@@ -411,14 +431,15 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         public Task<string> GetArtworkAsync(FullTrack track) => GetArtworkAsync(track.Album);
         public Task<string> GetArtworkAsync(FullEpisode episode) => GetArtworkAsync(episode.Images, episode.Uri);
 
-        public Task<string> GetArtworkAsync(SimplePlaylist playlist) => GetArtworkAsync(playlist.Images,playlist.Uri);
+        public Task<string> GetArtworkAsync(SimplePlaylist playlist) => GetArtworkAsync(playlist.Images, playlist.Uri);
 
-        public Task<string> GetArtworkAsync(SpotifySearchResult searchResult) => GetArtworkAsync(searchResult.Images,searchResult.Uri);
+        public Task<string> GetArtworkAsync(SpotifySearchResult searchResult) => GetArtworkAsync(searchResult.Images, searchResult.Uri);
 
         private Task<string> GetArtworkAsync(List<Image> images, string uri)
         {
-            if (!images.Any()){
-                return Task.Run( () => UnknownIcon );
+            if (!images.Any())
+            {
+                return Task.Run(() => UnknownIcon);
             }
 
             var url = images.Last().Url;
