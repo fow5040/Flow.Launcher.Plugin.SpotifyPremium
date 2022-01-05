@@ -430,6 +430,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             if (authSemaphore.CurrentCount == 0)
             {
                 await authSemaphore.WaitAsync();
+                authSemaphore.Release();
                 return;
             }
             await authSemaphore.WaitAsync();
