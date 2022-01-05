@@ -106,6 +106,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 await ReconnectAsync();
             }
 
+            if (token.IsCancellationRequested)
+                return null;
+
             try
             {
                 List<Result> results;
@@ -424,8 +427,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         private async Task ReconnectAsync()
         {
+            if (authSemaphore.CurrentCount == 0)
+                return;
+            await authSemaphore.WaitAsync();
             await _client.ConnectWebClient();
             currentUserId = await _client.GetUserIdAsync();
+            authSemaphore.Release();
         }
 
         //Return a generic reconnection action
