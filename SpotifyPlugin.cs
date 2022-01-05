@@ -30,6 +30,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private const int OptimizeClientKeyDelay = 200; //Time to wait before issuing an expensive query
         private int cachedVolume = -1;
 
+        private SemaphoreSlim authSemaphore = new SemaphoreSlim(1, 1);
+
         //Wait for delay before querying 
         //Specify expensive search terms for optimizing client usage
         private readonly string[] expensiveSearchTerms =
@@ -89,14 +91,19 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
         {
+            if (!_client.RefreshTokenAvailable())
+            {
+                return SingleResult("Require Authentication", "Select to authorize", ReconnectAction(_client), false);
+            }
+            
             if (!_client.ApiConnected)
             {
-                return SingleResult("Spotify client unreachable", "Select to re-authorize", ReconnectAction(_client), false);
+                await ReconnectAsync();
             }
 
-            if (!_client.TokenValid)
+            if (!await _client.CheckTokenValidityAsync())
             {
-                return SingleResult("Spotify client Token Expired", "Select to re-authorize", ReconnectAction(_client), false);
+                await ReconnectAsync();
             }
 
             try
@@ -405,14 +412,20 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 //TODO: Add computer and phone icons
                 //IcoPath = await _client.GetArtworkAsync(x.Images,x.Uri),
                 IcoPath = SpotifyIcon,
-                Action = _ =>
+                Action = (a) =>
                 {
-                    _client.SetDevice(x.Id).GetAwaiter().GetResult();
+                    _ = _client.SetDevice(x.Id);
                     return true;
                 }
             }).ToList();
 
             return results.Any() ? results : NothingFoundResult;
+        }
+
+        private async Task ReconnectAsync()
+        {
+            await _client.ConnectWebClient();
+            currentUserId = await _client.GetUserIdAsync();
         }
 
         //Return a generic reconnection action
@@ -421,11 +434,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             // ReSharper disable once AsyncVoidLambda
             return async () =>
             {
-                await client.ConnectWebClient(keepRefreshToken);
                 //Assign client ID asynchronously when connection finishes
                 try
                 {
-                    currentUserId = await client.GetUserIdAsync();
+                    await ReconnectAsync();
                     _context.API.ChangeQuery(_context.CurrentPluginMetadata.ActionKeywords[0] + " ", true);
                 }
                 catch
