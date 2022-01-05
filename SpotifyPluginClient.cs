@@ -101,22 +101,18 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public bool ApiConnected => _spotifyClient != null;
 
-        public bool TokenValid
+        public async Task<bool> CheckTokenValidityAsync()
         {
-            get
+            //Hit a lightweight endpoint to see if the current token is still valid
+            try
             {
-                //Hit a lightweight endpoint to see if the current token is still valid
-                try
-                {
-                    var prof = _spotifyClient.UserProfile.Current().GetAwaiter().GetResult();
-                    return true;
+                var prof = await _spotifyClient.UserProfile.Current();
+                return true;
 
-                }
-                catch (APIUnauthorizedException e)
-                {
-                    return false;
-                }
-
+            }
+            catch (APIUnauthorizedException e)
+            {
+                return false;
             }
         }
 
@@ -222,7 +218,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             var shuffleRequest = new PlayerShuffleRequest(!ShuffleStatus);
             _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();
-            ;
+        }
+
+        public bool RefreshTokenAvailable()
+        {
+            _securityStore = SecurityStore.Load(pluginDirectory);
+            return _securityStore.HasRefreshToken;
         }
 
         public async Task ConnectWebClient(bool keepRefreshToken = true)
@@ -295,9 +296,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 {
                     Console.WriteLine("Unable to open URL, manually open: {0}", uri);
                 }
-                ;
             }
-            ;
 
         }
 
