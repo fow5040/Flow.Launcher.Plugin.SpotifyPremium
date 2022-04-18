@@ -435,6 +435,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return results.Any() ? results : NothingFoundResult;
         }
 
+
         private async Task ReconnectAsync(bool keepRefreshToken = true)
         {
             if (authSemaphore.CurrentCount == 0)

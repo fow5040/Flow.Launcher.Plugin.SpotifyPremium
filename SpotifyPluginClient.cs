@@ -118,6 +118,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return false;
             }
         }
+      
         public async Task<bool> UserHasSpotifyPremium()
         {
             try
