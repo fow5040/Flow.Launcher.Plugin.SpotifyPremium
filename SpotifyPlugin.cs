@@ -109,9 +109,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             if (!await _client.UserHasSpotifyPremium())
             {
                 return SingleResult(
-                    "Spotify account is not premium!",
-                    "Log out of the current account and select this to reconnect with a premium account",
-                    ReconnectAction(_client),
+                    "Current Spotify account is not premium!",
+                    "Switch to premium account, then select this to use new login",
+                    ReconnectAction(_client, false),
                     false
                 );
             }
@@ -435,7 +435,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return results.Any() ? results : NothingFoundResult;
         }
 
-        private async Task ReconnectAsync()
+        private async Task ReconnectAsync(bool keepRefreshToken = true)
         {
             if (authSemaphore.CurrentCount == 0)
             {
@@ -444,7 +444,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return;
             }
             await authSemaphore.WaitAsync();
-            await _client.ConnectWebClient();
+            await _client.ConnectWebClient(keepRefreshToken);
             currentUserId = await _client.GetUserIdAsync();
             authSemaphore.Release();
         }
@@ -458,7 +458,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 //Assign client ID asynchronously when connection finishes
                 try
                 {
-                    await ReconnectAsync();
+                    await ReconnectAsync(keepRefreshToken);
                     _context.API.ChangeQuery(_context.CurrentPluginMetadata.ActionKeywords[0] + " ", true);
                 }
                 catch

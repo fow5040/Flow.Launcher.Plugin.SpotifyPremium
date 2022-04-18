@@ -69,6 +69,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             get
             {
+
                 IPlayableItem item = _spotifyClient.Player.GetCurrentPlayback().GetAwaiter().GetResult().Item;
                 if (item is FullTrack track)
                 {
