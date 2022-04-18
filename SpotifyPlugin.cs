@@ -106,6 +106,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 await ReconnectAsync();
             }
 
+            if (!await _client.UserHasSpotifyPremium())
+            {
+                return SingleResult(
+                    "Spotify account is not premium!",
+                    "Log out of the current account and select this to reconnect with a premium account",
+                    ReconnectAction(_client),
+                    false
+                );
+            }
+
             if (token.IsCancellationRequested)
                 return null;
 
