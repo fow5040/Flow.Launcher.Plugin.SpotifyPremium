@@ -19,6 +19,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private SecurityStore _securityStore;
         private string pluginDirectory;
         private const string UnknownIcon = "icon.png";
+        public PrivateUser profile;
 
         public SpotifyPluginClient(IPublicAPI api, string pluginDir = null)
         {
@@ -68,6 +69,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             get
             {
+
                 IPlayableItem item = _spotifyClient.Player.GetCurrentPlayback().GetAwaiter().GetResult().Item;
                 if (item is FullTrack track)
                 {
@@ -96,7 +98,6 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public async Task<string> GetUserIdAsync() => (await _spotifyClient.UserProfile.Current()).Id;
 
-
         private string CacheFolder { get; }
 
         public bool ApiConnected => _spotifyClient != null;
@@ -107,6 +108,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             try
             {
                 var prof = await _spotifyClient.UserProfile.Current();
+                // Save profile here for spotify premium checks
+                this.profile = prof;
                 return true;
 
             }
@@ -115,6 +118,26 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return false;
             }
         }
+      
+        public async Task<bool> UserHasSpotifyPremium()
+        {
+            try
+            {
+                if (this.profile == null) {
+                    var prof = await _spotifyClient.UserProfile.Current();
+                    // Save profile here for spotify premium checks
+                    this.profile = prof;
+                }
+
+                return this.profile.Product == "premium";
+
+            }
+            catch (APIUnauthorizedException e)
+            {
+                return false;
+            }
+        }
+
 
         public void Play()
         {
@@ -164,7 +187,6 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             try
             {
                 _spotifyClient.Player.AddToQueue(enqueueRequest).GetAwaiter().GetResult();
-                ;
             }
             catch (Exception e)
             {
