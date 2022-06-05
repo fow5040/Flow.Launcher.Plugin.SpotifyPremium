@@ -35,7 +35,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 - **You _NEED_ a client secret and client ID to use this plugin!** This app currently hardcodes my personal Client ID and Client Secret to interact with Spotify. If current app usage hits any API limits, naturally you will need to switch out the current Client ID and Secret
 - To use a custom ID/Secret, create a file called security.store in _*yourFlowUserDataDirectory*\Plugins\SpotifyPremium-*ver*\security.store_ with the following format:
 ```
-{"ClientID":"yourClientSecret","ClientSecret":"yourClientSecret"}
+{"ClientId":"yourClientSecret","ClientSecret":"yourClientSecret"}
 ```
     - If using roaming, your Flow Userdata Directory is: `%APPDATA%\FlowLauncher`
     - If using portable, your Flow Userdata Directory is : `%localappdata%\FlowLauncher\app-<VersionOfYourFlowLauncher>\UserData`
