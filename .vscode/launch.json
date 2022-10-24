@@ -8,7 +8,7 @@
             "name": ".NET Attach",
             "type": "clr",
             "request": "attach",
-            "processName": "FLow.Launcher.exe"
+            "processName": "Flow.Launcher.exe"
         }
     ]
 }
