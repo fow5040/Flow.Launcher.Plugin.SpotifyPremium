@@ -248,20 +248,75 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return SingleResult("Toggle Mute", $"{toggleAction}: {_client.CurrentPlaybackName}", _client.ToggleMute);
         }
 
-        private List<Result> SetVolume(string arg = null)
-        {
-            if (int.TryParse(arg, out var tempInt))
-            {
-                if (tempInt is >= 0 and <= 100)
+        private struct SetVolAction {
+            public enum VolAction {
+                ABSOLUTE,
+                DECREASE,
+                INCREASE
+            }
+
+            public VolAction action;
+            public int target;
+            public int current;
+            // validCommand returns false if parsing the actionString fails
+            // to create a valid volume change operation
+            public bool validCommand;
+
+            public SetVolAction(string actionString, int current) {
+                string intString = actionString;
+                this.validCommand = false;
+                this.target = -1;
+                this.current = current;
+                this.action = VolAction.ABSOLUTE;
+                if (actionString[0] == '+') 
                 {
-                    return SingleResult($"Set Volume to {tempInt}", $"Current Volume: {cachedVolume}", () =>
+                    this.action = VolAction.INCREASE;
+                    intString = actionString.Substring(1);
+                }
+                if (actionString[0] == '-') 
+                {
+                    this.action = VolAction.DECREASE;
+                    intString = actionString.Substring(1);
+                }
+
+                if (int.TryParse(intString, out var amt)) 
+                {
+                    switch (this.action) 
                     {
-                        _client.SetVolume(tempInt);
-                    });
+                        case VolAction.ABSOLUTE:
+                            this.target = amt;
+                            break;
+                        case VolAction.INCREASE:
+                            this.target = this.current + amt;
+                            if (this.target > 100) this.target = 100;
+                            break;
+                        case VolAction.DECREASE:
+                            this.target = this.current - amt;
+                            if (this.target < 0) this.target = 0;
+                            break;
+                    }
+
+                    if (this.target is >= 0 and <= 100) this.validCommand = true;
+
                 }
             }
 
+        }
+
+        private List<Result> SetVolume(string arg = null)
+        {
+
             cachedVolume = _client.CurrentVolume;
+            SetVolAction volAction = new SetVolAction(arg, cachedVolume);
+
+            if (volAction.validCommand)
+            {
+                return SingleResult($"Set Volume to {volAction.target}", $"Current Volume: {cachedVolume}", () =>
+                {
+                    _client.SetVolume(volAction.target);
+                });
+            }
+
             return SingleResult($"Volume", $"Current Volume: {cachedVolume}", () => { });
         }
 

@@ -11,24 +11,24 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 ![image](http://i.imgur.com/AfUkPvd.gif)
 
 ### Usage
-| Keyword                            | Description                   |
-| ---------------------------------- | ----------------------------- |
-| `` sp ``                           | Show currently playing track  |
-| `` sp {spotify search query} ``    | Search all of Spotify         |
-| `` sp track {track name} ``        | Search for a track            |
-| `` sp artist {artist name} ``      | Search for an artist          |
-| `` sp album {album name} ``        | Search for an album           |
-| `` sp playlist {playlist name} ``  | Search personal playlists     |
-| `` sp queue {track name} ``        | Search for track and queue it |
-| `` sp next ``                      | Play next track               |
-| `` sp last ``                      | Play previous track           |
-| `` sp play ``                      | Resume currently playing track|
-| `` sp pause ``                     | Pause currently playing track |
-| `` sp mute ``                      | Toggle Mute                   |
-| `` sp volume ``                    | Set Volume (1-100)            |
-| `` sp device ``                    | Set Active Device             |
-| `` sp shuffle ``                   | Toggle Shuffle Mode           |
-| `` sp reconnect ``                 | Force a full reconnection     |
+| Keyword                            | Description                                      |
+| ---------------------------------- | -----------------------------                    |
+| `` sp ``                           | Show currently playing track                     |
+| `` sp {spotify search query} ``    | Search all of Spotify                            |
+| `` sp track {track name} ``        | Search for a track                               |
+| `` sp artist {artist name} ``      | Search for an artist                             |
+| `` sp album {album name} ``        | Search for an album                              |
+| `` sp playlist {playlist name} ``  | Search personal playlists                        |
+| `` sp queue {track name} ``        | Search for track and queue it                    |
+| `` sp next ``                      | Play next track                                  |
+| `` sp last ``                      | Play previous track                              |
+| `` sp play ``                      | Resume currently playing track                   |
+| `` sp pause ``                     | Pause currently playing track                    |
+| `` sp mute ``                      | Toggle Mute                                      |
+| `` sp volume {level}``             | Set Volume (absolute 1-100 or relative +/- 20)   |
+| `` sp device ``                    | Set Active Device                                |
+| `` sp shuffle ``                   | Toggle Shuffle Mode                              |
+| `` sp reconnect ``                 | Force a full reconnection                        |
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
