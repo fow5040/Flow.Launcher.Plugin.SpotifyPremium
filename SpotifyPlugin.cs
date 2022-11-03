@@ -4,13 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using SpotifyAPI.Web;
+
+using Flow.Launcher.Plugin.SpotifyPremium.ViewModels;
+using Flow.Launcher.Plugin.SpotifyPremium.Views;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
-    public class SpotifyPlugin : IAsyncPlugin
+    public class SpotifyPlugin : IAsyncPlugin, ISettingProvider
     {
         private PluginInitContext _context;
+
+        private Settings _settings;
 
         private SpotifyPluginClient _client;
 
@@ -578,6 +584,11 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             var results = await SearchTrack(param, true);
 
             return results.Any() ? results : NothingFoundResult;
+        }
+
+        public Control CreateSettingPanel()
+        {
+            return new SpotifyPremiumSettings(new SettingsViewModel(_settings));
         }
 
     }
