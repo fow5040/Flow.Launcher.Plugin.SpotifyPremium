@@ -50,6 +50,9 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
     - Restore all NuGet dependencies (dotnet restore)
     - Build with `dotnet build`
     - Copy the `Output/Debug/<Plugin>` folder to your FlowLauncher `Userdata\Plugins` folder
+- (May or may not work):
+    - `./test.ps1` should automatically find the Flow Launcher process, stop it, copy your plugin, and restart Flow
+    - `./releaes.ps1` creates the Zip Package for release in `Output/Release/`
 
 ### Third-Party Libraries
 
