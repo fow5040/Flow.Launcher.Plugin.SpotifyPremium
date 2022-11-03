@@ -161,10 +161,11 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             catch (Exception e)
             {
                 Console.WriteLine(e);
+                return SingleResult(
+                    "There was an error with your request",
+                    e.GetBaseException().Message
+                );
             }
-
-            //If searches run into an exception, return results not found Result
-            return NothingFoundResult;
         }
 
         private async Task<List<Result>> GetPlaying()
@@ -179,13 +180,15 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }, false);
             }
 
-            var item = _client.PlaybackContext.Item;
+            var playbackContext = _client.PlaybackContext;
+
+            var item = playbackContext.Item;
 
             var t = item as FullTrack;
             var e = item as FullEpisode;
 
-            var status = _client.PlaybackContext.IsPlaying ? "Now Playing" : "Paused";
-            var toggleAction = _client.PlaybackContext.IsPlaying ? "Pause" : "Resume";
+            var status = playbackContext.IsPlaying ? "Now Playing" : "Paused";
+            var toggleAction = playbackContext.IsPlaying ? "Pause" : "Resume";
 
             // Check if item is a track, episode, or default icon if neither work
             var icon = t != null ? _client.GetArtworkAsync(t) :
@@ -207,7 +210,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     SubTitle = $"{toggleAction}: {t.Name}",
                     Action = _ =>
                     {
-                        if (_client.PlaybackContext.IsPlaying)
+                        if (playbackContext.IsPlaying)
                             _client.Pause();
                         else
                             _client.Play();
@@ -250,6 +253,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         private struct SetVolAction {
             public enum VolAction {
+                DISPLAY,
                 ABSOLUTE,
                 DECREASE,
                 INCREASE
@@ -258,15 +262,20 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             public VolAction action;
             public int target;
             public int current;
-            // validCommand returns false if parsing the actionString fails
-            // to create a valid volume change operation
-            public bool validCommand;
+            // validAction returns false if parsing the actionString fails
+            // to create a valid volume change operation, or if no
+            // action needs to be taken
+            public bool validAction;
 
             public SetVolAction(string actionString, int current) {
-                string intString = actionString;
-                this.validCommand = false;
+                this.validAction = false;
                 this.target = -1;
                 this.current = current;
+                if (string.IsNullOrWhiteSpace(actionString)) {
+                    this.action = VolAction.DISPLAY;
+                    return;
+                }
+                string intString = actionString;
                 this.action = VolAction.ABSOLUTE;
                 if (actionString[0] == '+') 
                 {
@@ -296,9 +305,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                             break;
                     }
 
-                    if (this.target is >= 0 and <= 100) this.validCommand = true;
+                    if (this.target is >= 0 and <= 100) {
+                        this.validAction = true;
+                        return;
+                    } 
 
                 }
+
+                // If there's no valid action to take, fall back to displaying
+                // the current volume
+                this.action = VolAction.DISPLAY;
             }
 
         }
@@ -309,7 +325,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             cachedVolume = _client.CurrentVolume;
             SetVolAction volAction = new SetVolAction(arg, cachedVolume);
 
-            if (volAction.validCommand)
+            if (volAction.validAction)
             {
                 return SingleResult($"Set Volume to {volAction.target}", $"Current Volume: {cachedVolume}", () =>
                 {
