@@ -27,6 +27,18 @@
             VerticalAlignment="Center"
             FontSize="14"
             Text="asdf" />
+        
+        <Expander
+            Name="spotifyClientCredentials"
+            Margin="0,10,0,0"
+            Collapsed="spotifyClientCredentials_Collapsed"
+            Expanded="spotifyClientCredentials_Click"
+            Header="Spotify Client Credentials"
+        >
+            <TextBlock>
+                
+            </TextBlock>
+        </Expander>
 
     </Grid>
 </UserControl>

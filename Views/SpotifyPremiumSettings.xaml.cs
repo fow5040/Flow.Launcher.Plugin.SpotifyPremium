@@ -35,6 +35,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium.Views
         private void SpotifyPremiumSettings_Loaded(object sender, RoutedEventArgs e)
         {
         }
+
+        private void spotifyClientCredentials_Collapsed(object sender, RoutedEventArgs e)
+        {
+            spotifyClientCredentials.Height = double.NaN;
+            SetButtonVisibilityToHidden();
+        }
     }
 
     
