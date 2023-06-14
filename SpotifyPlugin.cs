@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin;
+using Flow.Launcher.Plugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -83,11 +83,11 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private List<Result> Pause(string arg = null) =>
             SingleResult("Pause", $"Pause: {_client.CurrentPlaybackName}", _client.Pause);
 
-        private List<Result> PlayNext(string arg) =>
-            SingleResult("Next", $"Skip: {_client.CurrentPlaybackName}", _client.Skip);
+        private List<Result> PlayNext(string query) =>
+            SingleResult("Next", $"Skip: {_client.CurrentPlaybackName}", _client.Skip, requery: true, query: query);
 
-        private List<Result> PlayLast(string arg) =>
-            SingleResult("Last", "Skip Backwards", _client.SkipBack);
+        private List<Result> PlayLast(string query) =>
+            SingleResult("Last", "Skip Backwards", _client.SkipBack, requery: true, query: query);
 
         public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
         {
@@ -132,7 +132,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 //Run the query if it is not an expensive search term
                 if (_terms.ContainsKey(query.FirstSearch))
                 {
-                    results = _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
+                    results = _terms[query.FirstSearch].Invoke(query.RawQuery);
                     return results;
                 }
 
@@ -168,7 +168,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
-        private async Task<List<Result>> GetPlaying()
+        private async Task<List<Result>> GetPlaying(string rawQuery)
         {
             var d = await _client.GetActiveDeviceNameAsync();
             if (d == null)
@@ -550,7 +550,14 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             SingleResult("No results found on Spotify.", "Please try refining your search", () => { });
 
         // Returns a list with a single result
-        private static List<Result> SingleResult(string title, string subtitle = "", Action action = default, bool hideAfterAction = true) =>
+        private List<Result> SingleResult(
+            string title, 
+            string subtitle = "", 
+            Action action = default, 
+            bool hideAfterAction = true, 
+            bool requery = false,
+            string query = "") 
+            => 
             new()
             {
                 new Result()
@@ -561,6 +568,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Action = _ =>
                     {
                         action?.Invoke();
+                        if (requery)
+                            _context.API.ChangeQuery(query, requery:true);
                         return hideAfterAction;
                     }
                 }
