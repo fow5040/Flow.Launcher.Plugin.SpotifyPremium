@@ -2,10 +2,6 @@ name: Publish Release
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ master ]
-    paths-ignore: 
-      - .github/workflows/*
 
 jobs:
   publish:
@@ -15,7 +11,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 3.1.301
+          dotnet-version: 5.0.x
       - name: get version
         id: version
         uses: notiz-dev/github-action-json-property@release
@@ -25,13 +21,13 @@ jobs:
       - run: echo ${{steps.version.outputs.prop}} 
       - name: Build
         run: |
-          dotnet publish 'Flow.Launcher.Plugin.SpotifyPremium.csproj' --framework netcoreapp3.1  -c Release -o "SpotifyPremium"
-          7z a -tzip "Flow.Launcher.Plugin.SpotifyPremium.zip" "SpotifyPremium/*"
-          rm -r "SpotifyPremium"
+          dotnet publish 'Flow.Launcher.Plugin.SpotifyPremium.csproj' -r win-x64 -c Release -o "SpotifyPremium-${{steps.version.outputs.prop}}"
+          7z a -tzip "SpotifyPremium-${{steps.version.outputs.prop}}.zip" "./SpotifyPremium-${{steps.version.outputs.prop}}/*"
+          rm -r "SpotifyPremium-${{steps.version.outputs.prop}}"
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
-          files: "Flow.Launcher.Plugin.SpotifyPremium.zip"
+          files: "SpotifyPremium-${{steps.version.outputs.prop}}"
           tag_name: "v${{steps.version.outputs.prop}}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
