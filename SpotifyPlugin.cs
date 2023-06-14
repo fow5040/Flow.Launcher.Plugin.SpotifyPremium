@@ -1,4 +1,4 @@
-using Flow.Launcher.Plugin;
+﻿using Flow.Launcher.Plugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -213,48 +213,28 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
             return new List<Result>()
             {
-                new()
-                {
-                    Title = t?.Name ?? e?.Name ?? "Not Available",
-                    SubTitle = $"{status} | by {string.Join(", ", t.Artists.Select(a => String.Join("", a.Name)))}",
-                    IcoPath = (icon != null ? icon.Result : SpotifyIcon)
-                },
-                new()
-                {
-                    IcoPath = SpotifyIcon,
-                    Title = "Pause / Resume",
-                    SubTitle = $"{toggleAction}: {t.Name}",
-                    Action = _ =>
-                    {
-                        if (playbackContext.IsPlaying)
-                            _client.Pause();
-                        else
-                            _client.Play();
-                        return true;
-                    }
-                },
-                new()
-                {
-                    IcoPath = SpotifyIcon,
-                    Title = "Next",
-                    SubTitle = $"Skip: {t.Name}",
-                    Action = context =>
-                    {
-                        _client.Skip();
-                        return true;
-                    }
-                },
-                new()
-                {
-                    IcoPath = SpotifyIcon,
-                    Title = "Last",
-                    SubTitle = "Skip backwards",
-                    Action = context =>
-                    {
-                        _client.SkipBack();
-                        return true;
-                    }
-                },
+                SingleResult(
+                    t?.Name ?? e?.Name ?? "Not Available",
+                    $"{status} | by {string.Join(", ", t.Artists.Select(a => String.Join("", a.Name)))}",
+                    icon != null ? icon.Result : SpotifyIcon),
+                SingleResult(
+                    "Pause / Resume",
+                    $"{toggleAction}: {t.Name}",
+                    action: () =>
+                        {
+                            if (playbackContext.IsPlaying)
+                            {
+                                _client.Pause();
+                            }
+                            else
+                            {
+                                _client.Play();
+                            }
+
+                        }, 
+                    hideAfterAction: true),
+                PlayNext(rawQuery).First(),
+                PlayLast(rawQuery).First(),
                 ToggleMute().First(),
                 ToggleShuffle().First(),
                 SetVolume().First()
