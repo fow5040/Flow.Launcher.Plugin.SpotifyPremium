@@ -237,7 +237,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
             // New volume percentage can not be retrieved even after fully waiting for the call to finish.
             // This seems to be the right amount of time to manually wait so API can return the updated volume after this call.
-            Thread.Sleep(900);
+            Thread.Sleep(1000);
         }
 
         public void ToggleShuffle()
