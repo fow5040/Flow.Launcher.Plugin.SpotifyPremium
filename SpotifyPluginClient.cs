@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Net;
 using static SpotifyAPI.Web.Scopes;
+using System.Threading;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
@@ -202,7 +203,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public void Skip()
         {
-            _spotifyClient.Player.SkipNext();
+            // This needs to wait for completion otherwise API can not retrieve the new track info immediately after this call.
+            _spotifyClient.Player.SkipNext().Wait();
         }
 
         public void SkipBack()
@@ -226,14 +228,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
 
             _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();
-            ;
         }
 
         public void SetVolume(int volumePercent = 0)
         {
             var volRequest = new PlayerVolumeRequest(volumePercent);
             _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();
-            ;
+
+            // New volume percentage can not be retrieved even after fully waiting for the call to finish.
+            // This seems to be the right amount of time to manually wait so API can return the updated volume after this call.
+            Thread.Sleep(900);
         }
 
         public void ToggleShuffle()
