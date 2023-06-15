@@ -1,4 +1,4 @@
-﻿using Flow.Launcher.Plugin;
+using Flow.Launcher.Plugin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +26,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         private DateTime lastQueryTime; //Record the time on every query
         //Almost every keypress counts as a new query
+
+        private string currentQuery;
 
         private const int OptimizeClientKeyDelay = 200; //Time to wait before issuing an expensive query
         private int cachedVolume = -1;
@@ -69,7 +71,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 new List<Result> {
                     SingleResult($"Query Count: {context.CurrentPluginMetadata.QueryCount}",
                     $"Avg. Query Time: {context.CurrentPluginMetadata.AvgQueryTime}ms",
-                    action: null) 
+                    action: null)
                 });
 
             _terms.Add("reconnect", q =>
@@ -86,14 +88,17 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private List<Result> Pause(string arg = null) =>
             new List<Result> { SingleResult("Pause", $"Pause: {_client.CurrentPlaybackName}", action: _client.Pause) };
 
-        private List<Result> PlayNext(string rawQuery) =>
-            new List<Result> { SingleResult("Next", $"Skip: {_client.CurrentPlaybackName}", action: _client.Skip, requery: true, query: rawQuery) };
+        private List<Result> PlayNext(string arg) =>
+            new List<Result> { SingleResult("Next", $"Skip: {_client.CurrentPlaybackName}", action: _client.Skip) };
 
-        private List<Result> PlayLast(string rawQuery) =>
-            new List<Result> { SingleResult("Last", "Skip Backwards", action: _client.SkipBack, requery: true, query: rawQuery) };
+        private List<Result> PlayLast(string arg) =>
+            new List<Result> { SingleResult("Last", "Skip Backwards", action: _client.SkipBack) };
 
         public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
         {
+            //Save the raw query for requery API call. Refreshes current playing info
+            currentQuery = query.RawQuery;
+
             if (!_client.RefreshTokenAvailable())
             {
                 return new List<Result> {
@@ -135,13 +140,13 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 // display status if no parameters are added
                 if (string.IsNullOrWhiteSpace(query.Search))
                 {
-                    return await GetPlaying(query.RawQuery);
+                    return await GetPlaying();
                 }
 
                 //Run the query if it is not an expensive search term
                 if (_terms.ContainsKey(query.FirstSearch))
                 {
-                    return _terms[query.FirstSearch].Invoke(query.RawQuery);
+                    return _terms[query.FirstSearch].Invoke(query.SecondToEndSearch);
                 }
 
                 //If query is expensive, AND if optimize client Usage is flagged
@@ -178,7 +183,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
-        private async Task<List<Result>> GetPlaying(string rawQuery)
+        private async Task<List<Result>> GetPlaying()
         {
             var d = await _client.GetActiveDeviceNameAsync();
             if (d == null)
@@ -231,10 +236,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                                 _client.Play();
                             }
 
-                        }, 
+                        },
                     hideAfterAction: true),
-                PlayNext(rawQuery).First(),
-                PlayLast(rawQuery).First(),
+                PlayNext(string.Empty).First(),
+                PlayLast(string.Empty).First(),
                 ToggleMute().First(),
                 ToggleShuffle().First(),
                 SetVolume().First()
@@ -244,7 +249,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private List<Result> ToggleMute(string arg = null)
         {
             var toggleAction = _client.MuteStatus ? "Unmute" : "Mute";
-            return new List<Result> { 
+            return new List<Result> {
                 SingleResult("Toggle Mute", $"{toggleAction}: {_client.CurrentPlaybackName}", action: _client.ToggleMute)
             };
         }
@@ -275,20 +280,20 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }
                 string intString = actionString;
                 this.action = VolAction.ABSOLUTE;
-                if (actionString[0] == '+') 
+                if (actionString[0] == '+')
                 {
                     this.action = VolAction.INCREASE;
                     intString = actionString.Substring(1);
                 }
-                if (actionString[0] == '-') 
+                if (actionString[0] == '-')
                 {
                     this.action = VolAction.DECREASE;
                     intString = actionString.Substring(1);
                 }
 
-                if (int.TryParse(intString, out var amt)) 
+                if (int.TryParse(intString, out var amt))
                 {
-                    switch (this.action) 
+                    switch (this.action)
                     {
                         case VolAction.ABSOLUTE:
                             this.target = amt;
@@ -556,13 +561,12 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         // Returns a list with a single result
         private Result SingleResult(
-            string title, 
+            string title,
             string subtitle = "",
             string icoPath = SpotifyIcon,
-            Action action = default, 
-            bool hideAfterAction = true, 
-            bool requery = false,
-            string query = "") 
+            Action action = default,
+            bool hideAfterAction = true,
+            bool requery = true)
             =>
             new Result()
             {
@@ -572,8 +576,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 Action = _ =>
                 {
                     action?.Invoke();
-                    if (requery && !string.IsNullOrEmpty(query))
-                        _context.API.ChangeQuery(query, requery:true);
+
+                    if (requery)
+                        RefreshDisplayInfo();
+                    
                     return hideAfterAction;
                 }
             };
@@ -591,6 +597,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
             return results.Any() ? results : NothingFoundResult;
         }
-
+            
+        private void RefreshDisplayInfo() => _context.API.ChangeQuery(currentQuery, true);
     }
 }
