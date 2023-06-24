@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Net;
 using static SpotifyAPI.Web.Scopes;
+using System.Threading;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
@@ -202,7 +203,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public void Skip()
         {
-            _spotifyClient.Player.SkipNext();
+            // This needs to wait for completion otherwise API can not retrieve the new track info immediately after this call.
+            _spotifyClient.Player.SkipNext().Wait();
         }
 
         public void SkipBack()
@@ -213,27 +215,36 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         public void ToggleMute()
         {
             Device currentDevice = PlaybackContext.Device;
-            PlayerVolumeRequest volRequest;
+            int volRequest;
             if (currentDevice.VolumePercent != 0)
             {
                 // VolumePercent is nullable for whatever reason - assume to be 100 if null
                 mLastVolume = (currentDevice.VolumePercent != null ? (int)currentDevice.VolumePercent : 100);
-                volRequest = new PlayerVolumeRequest(0);
+                volRequest = 0;
             }
             else
             {
-                volRequest = new PlayerVolumeRequest(mLastVolume);
+                volRequest = mLastVolume;
             }
 
-            _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();
-            ;
+            SetVolume(volRequest);
         }
 
         public void SetVolume(int volumePercent = 0)
         {
+            var currentVolume = CurrentVolume;
+
+            if (currentVolume == volumePercent)
+                return;
+
+            mLastVolume = currentVolume;
+
             var volRequest = new PlayerVolumeRequest(volumePercent);
             _spotifyClient.Player.SetVolume(volRequest).GetAwaiter().GetResult();
-            ;
+
+            // New volume percentage can not be retrieved even after fully waiting for the call to finish.
+            // Manually wait so API can return the updated volume after this call.
+            while (mLastVolume == CurrentVolume) { }
         }
 
         public void ToggleShuffle()
