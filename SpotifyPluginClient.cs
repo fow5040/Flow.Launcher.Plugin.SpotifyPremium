@@ -8,6 +8,8 @@ using System.Linq;
 using System.Net;
 using static SpotifyAPI.Web.Scopes;
 using System.Threading;
+using SpotifyAPI.Web.Http;
+using Newtonsoft.Json;
 
 namespace Flow.Launcher.Plugin.SpotifyPremium
 {
@@ -267,14 +269,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
-
                 var refreshRequest = new AuthorizationCodeRefreshRequest(_securityStore.ClientId,
                     _securityStore.ClientSecret,
                     _securityStore.RefreshToken);
                 var refreshResponse = await new OAuthClient().RequestToken(refreshRequest);
+                
                 lock (_lock)
                 {
-                    _spotifyClient = new SpotifyClient(refreshResponse.AccessToken);
+                    var config = SpotifyClientConfig.CreateDefault(refreshResponse.AccessToken)
+                                    .WithJSONSerializer(new JsonSerializerDecorator(_api));
+                    _spotifyClient = new SpotifyClient(config);
                 }
             }
             else
@@ -294,7 +298,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     {
                         _securityStore.RefreshToken = token.RefreshToken;
                         _securityStore.Save(pluginDirectory);
-                        _spotifyClient = new SpotifyClient(token.AccessToken);
+
+                        var config = SpotifyClientConfig.CreateDefault(token.AccessToken)
+                                    .WithJSONSerializer(new JsonSerializerDecorator(_api));
+                        _spotifyClient = new SpotifyClient(config);
                     }
                 };
 
@@ -503,6 +510,45 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             await wc.DownloadFileTaskAsync(new Uri(url), path);
 
             return path;
+        }
+    }
+
+    /// <summary>
+    /// This is a workaround for Spotify API error as at 25/08/2024.
+    /// The Spotify API is causing error by returning non-JSON responses.
+    /// See issue for further details:
+    /// https://github.com/JohnnyCrazy/SpotifyAPI-NET/issues/980 
+    /// </summary>
+    public class JsonSerializerDecorator : IJSONSerializer
+    {
+        private readonly NewtonsoftJSONSerializer _jsonSerializer = new();
+
+        private IPublicAPI flowAPI;
+
+        public JsonSerializerDecorator(IPublicAPI flowAPI)
+        {
+            this.flowAPI = flowAPI;
+        }
+
+        public void SerializeRequest(IRequest request)
+        {
+            _jsonSerializer.SerializeRequest(request);
+        }
+
+        public IAPIResponse<T> DeserializeResponse<T>(IResponse response)
+        {
+            try
+            {
+                return _jsonSerializer.DeserializeResponse<T>(response);
+            }
+            catch (JsonReaderException e)
+            {
+                flowAPI.LogDebug("JsonSerializerDecorator", 
+                                    "Spotify API deserialize response error and is handled so plugin can continue to work. "
+                                    + "For info on this issue see https://github.com/JohnnyCrazy/SpotifyAPI-NET/issues/980. "
+                                    + string.Format("Error details:\n{0}", e));
+                return new APIResponse<T>(response);
+            }
         }
     }
 }
