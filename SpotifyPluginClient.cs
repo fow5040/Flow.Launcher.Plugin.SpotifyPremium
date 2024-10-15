@@ -89,6 +89,25 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
+        public String CurrentPlaybackId
+        {
+            get
+            {
+                IPlayableItem item = _spotifyClient.Player.GetCurrentPlayback().GetAwaiter().GetResult().Item;
+                if (item is FullTrack track)
+                {
+                    return track.Id;
+                }
+
+                if (item is FullEpisode episode)
+                {
+                    return episode.Id;
+                }
+
+                return "Unknown";
+            }
+        }
+
         public async Task<string> GetActiveDeviceNameAsync()
         {
             //Returns null, or active device string
@@ -249,6 +268,19 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             while (mLastVolume == CurrentVolume) { }
         }
 
+        public void LikeSongById(string trackId)
+        {
+            var saveRequest = new LibrarySaveTracksRequest(new List<string> {trackId});
+            _spotifyClient.Library.SaveTracks(saveRequest);
+        }
+
+        public void LikeCurrentSong()
+        {
+            var currentSongId = CurrentPlaybackId;
+            LikeSongById(currentSongId);
+        }
+
+
         public void ToggleShuffle()
         {
             var shuffleRequest = new PlayerShuffleRequest(!ShuffleStatus);
@@ -316,6 +348,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Scope = new List<string>
                     {
                         UserLibraryRead,
+                        UserLibraryModify,
                         UserReadEmail,
                         UserReadPrivate,
                         UserReadPlaybackPosition,
