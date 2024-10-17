@@ -30,6 +30,8 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 | `` sp shuffle ``                   | Toggle Shuffle Mode                              |
 | `` sp reconnect ``                 | Force a full reconnection                        |
 | `` sp like ``                      | Add the playing track to liked songs             |
+| `` sp remove ``                    | Remove the playing track from liked songs        |
+| `` sp like ``                      | Toggle the like of the playing track             |
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
