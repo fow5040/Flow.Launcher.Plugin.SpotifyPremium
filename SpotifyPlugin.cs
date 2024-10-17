@@ -65,9 +65,8 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _terms.Add("vol", SetVolume);
             _terms.Add("volume", SetVolume);
             _terms.Add("shuffle", ToggleShuffle);
-            _terms.Add("like", AddLikeCurrentSong);
+            _terms.Add("like", ToggleLikeCurrentSong);
             _terms.Add("unlike", UnlikeCurrentSong);
-            _terms.Add("toggle", ToggleLikeCurrentSong);
 
             //view query count and average query duration
             _terms.Add("diag", q =>
