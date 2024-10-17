@@ -66,7 +66,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _terms.Add("volume", SetVolume);
             _terms.Add("shuffle", ToggleShuffle);
             _terms.Add("like", AddLikeCurrentSong);
-            _terms.Add("remove", RemoveLikeCurrentSong);
+            _terms.Add("unlike", UnlikeCurrentSong);
             _terms.Add("toggle", ToggleLikeCurrentSong);
 
             //view query count and average query duration
@@ -346,10 +346,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return SingleResultInList("Like", $"Add '{currentSong}' to liked songs", action: _client.AddLikeCurrentSong);
         }
 
-        private List<Result> RemoveLikeCurrentSong(string arg = null)
+        private List<Result> UnlikeCurrentSong(string arg = null)
         {
             var currentSong = _client.CurrentPlaybackName;
-            return SingleResultInList("Remove", $"Remove '{currentSong}' from liked songs", action: _client.RemoveLikeCurrentSong);
+            return SingleResultInList("Remove", $"Remove '{currentSong}' from liked songs", action: _client.UnlikeCurrentSong);
         }
 
         private List<Result> ToggleLikeCurrentSong(string arg = null)
