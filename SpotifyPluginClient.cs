@@ -287,7 +287,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
             else
             {
-                RemoveLikeById(trackId);
+                UnlikeById(trackId);
             }
         }
 
@@ -297,7 +297,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _spotifyClient.Library.SaveTracks(likeRequest);
         }
 
-        public void RemoveLikeById(string trackId) {
+        public void UnlikeById(string trackId) {
             var likeRemoveRequest = new LibraryRemoveTracksRequest(new List<string> {trackId});
             _spotifyClient.Library.RemoveTracks(likeRemoveRequest);
         }
@@ -308,9 +308,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             LikeById(currentSongId);
         }
 
-        public void RemoveLikeCurrentSong() {
+        public void UnlikeCurrentSong() {
             var currentSongId = CurrentPlaybackId;
-            RemoveLikeById(currentSongId);
+            UnlikeById(currentSongId);
         }
     
         public void ToggleLikeCurrentSong() {

@@ -56,6 +56,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _expensiveTerms.Add("playlist", SearchPlaylist);
             _expensiveTerms.Add("device", GetDevices);
             _expensiveTerms.Add("queue", QueueSearch);
+            _expensiveTerms.Add("like", SearchLikeTrack);
 
             _terms.Add("next", PlayNext);
             _terms.Add("last", PlayLast);
@@ -65,9 +66,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _terms.Add("vol", SetVolume);
             _terms.Add("volume", SetVolume);
             _terms.Add("shuffle", ToggleShuffle);
-            _terms.Add("like", AddLikeCurrentSong);
-            _terms.Add("remove", RemoveLikeCurrentSong);
-            _terms.Add("toggle", ToggleLikeCurrentSong);
+            _terms.Add("unlike", UnlikeCurrentSong);
 
             //view query count and average query duration
             _terms.Add("diag", q =>
@@ -346,21 +345,10 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return SingleResultInList("Like", $"Add '{currentSong}' to liked songs", action: _client.AddLikeCurrentSong);
         }
 
-        private List<Result> RemoveLikeCurrentSong(string arg = null)
+        private List<Result> UnlikeCurrentSong(string arg = null)
         {
             var currentSong = _client.CurrentPlaybackName;
-            return SingleResultInList("Remove", $"Remove '{currentSong}' from liked songs", action: _client.RemoveLikeCurrentSong);
-        }
-
-        private List<Result> ToggleLikeCurrentSong(string arg = null)
-        {
-            var currentSongName = _client.CurrentPlaybackName;
-            var currentSongId = _client.CurrentPlaybackId;
-            var currentSongIsLiked = _client.CheckLikedById(currentSongId);
-            var subtitle = currentSongIsLiked 
-                ? $"Remove '{currentSongName}' from liked songs" 
-                : $"Add '{currentSongName}' to liked songs";
-            return SingleResultInList("Toggle", subtitle, action: _client.ToggleLikeCurrentSong);
+            return SingleResultInList("Remove", $"Remove '{currentSong}' from liked songs", action: _client.UnlikeCurrentSong);
         }
 
         private async Task<List<Result>> SearchAllAsync(string param)
@@ -502,6 +490,41 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
             await Task.WhenAll(results);
             return searchResults.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
+        }
+
+        private async Task<List<Result>> SearchLikeTrack(string param) {
+            if (!_client.ApiConnected) return AuthenticateResult;
+
+            // Like/Unlike currently playing song if no {track} param is passed
+            if (string.IsNullOrWhiteSpace(param))
+            {
+                var currentSongName = _client.CurrentPlaybackName;
+                var currentSongId = _client.CurrentPlaybackId;
+                var currentSongIsLiked = _client.CheckLikedById(currentSongId);
+                var subtitle = currentSongIsLiked 
+                    ? $"Remove '{currentSongName}' from liked songs" 
+                    : $"Add '{currentSongName}' to liked songs";
+                return SingleResultInList("Like", subtitle, action: _client.ToggleLikeCurrentSong);
+            }
+
+            // Retrieve data and return the first 20 results
+            var searchResults = _client.GetTracks(param).Result;
+            var results = searchResults.Select(async x => new Result()
+            {
+                Title = x.Name,
+                SubTitle = _client.CheckLikedById(x.Id)
+                    ? $"Remove '{x.Name}' by {string.Join(", ", x.Artists.Select(a => a.Name))} from liked songs" 
+                    : $"Add '{x.Name}' by {string.Join(", ", x.Artists.Select(a => a.Name))} to liked songs",
+                IcoPath = await _client.GetArtworkAsync(x),
+                Action = _ =>
+                {
+                    _client.ToggleLikeById(x.Id);
+                    return true;
+                }
+            }).ToArray();
+
+            await Task.WhenAll(results);
+            return results.Any() ? results.Select(x => x.Result).ToList() : NothingFoundResult;
         }
 
         private async Task<List<Result>> GetDevices(string param = null)
