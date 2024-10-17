@@ -133,7 +133,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return true;
 
             }
-            catch (APIUnauthorizedException e)
+            catch (APIUnauthorizedException)
             {
                 return false;
             }
@@ -152,7 +152,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return this.profile.Product == "premium";
 
             }
-            catch (APIUnauthorizedException e)
+            catch (APIUnauthorizedException)
             {
                 return false;
             }
