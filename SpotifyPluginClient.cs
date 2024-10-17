@@ -272,16 +272,50 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();
         }
 
-        public void LikeSongById(string trackId)
-        {
-            var saveRequest = new LibrarySaveTracksRequest(new List<string> {trackId});
-            _spotifyClient.Library.SaveTracks(saveRequest);
+        public bool CheckLikedById(string trackId) {
+            var checkLikeRequest = new LibraryCheckTracksRequest(new List<string> {trackId});
+            return _spotifyClient.Library.CheckTracks(checkLikeRequest).GetAwaiter().GetResult()[0];
         }
 
-        public void LikeCurrentSong()
+        public void ToggleLikeById(string trackId)
+        {
+            var isLiked = CheckLikedById(trackId);
+
+            if (!isLiked)
+            {
+                LikeById(trackId);
+            }
+            else
+            {
+                RemoveLikeById(trackId);
+            }
+        }
+
+        public void LikeById(string trackId)
+        {
+            var likeRequest = new LibrarySaveTracksRequest(new List<string> {trackId});
+            _spotifyClient.Library.SaveTracks(likeRequest);
+        }
+
+        public void RemoveLikeById(string trackId) {
+            var likeRemoveRequest = new LibraryRemoveTracksRequest(new List<string> {trackId});
+            _spotifyClient.Library.RemoveTracks(likeRemoveRequest);
+        }
+
+        public void AddLikeCurrentSong()
         {
             var currentSongId = CurrentPlaybackId;
-            LikeSongById(currentSongId);
+            LikeById(currentSongId);
+        }
+
+        public void RemoveLikeCurrentSong() {
+            var currentSongId = CurrentPlaybackId;
+            RemoveLikeById(currentSongId);
+        }
+    
+        public void ToggleLikeCurrentSong() {
+            var currentSongId = CurrentPlaybackId;
+            ToggleLikeById(currentSongId);
         }
 
         public bool RefreshTokenAvailable()

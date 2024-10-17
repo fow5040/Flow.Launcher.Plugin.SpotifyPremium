@@ -65,7 +65,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _terms.Add("vol", SetVolume);
             _terms.Add("volume", SetVolume);
             _terms.Add("shuffle", ToggleShuffle);
-            _terms.Add("like", LikeCurrentSong);
+            _terms.Add("like", AddLikeCurrentSong);
+            _terms.Add("remove", RemoveLikeCurrentSong);
+            _terms.Add("toggle", ToggleLikeCurrentSong);
 
             //view query count and average query duration
             _terms.Add("diag", q =>
@@ -338,10 +340,27 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return SingleResultInList("Toggle Shuffle", $"Turn Shuffle {toggleAction}", action: _client.ToggleShuffle);
         }
 
-        private List<Result> LikeCurrentSong(string arg = null)
+        private List<Result> AddLikeCurrentSong(string arg = null)
         {
             var currentSong = _client.CurrentPlaybackName;
-            return SingleResultInList("Like", $"Add '{currentSong}' to liked songs", action: _client.LikeCurrentSong);
+            return SingleResultInList("Like", $"Add '{currentSong}' to liked songs", action: _client.AddLikeCurrentSong);
+        }
+
+        private List<Result> RemoveLikeCurrentSong(string arg = null)
+        {
+            var currentSong = _client.CurrentPlaybackName;
+            return SingleResultInList("Remove", $"Remove '{currentSong}' from liked songs", action: _client.RemoveLikeCurrentSong);
+        }
+
+        private List<Result> ToggleLikeCurrentSong(string arg = null)
+        {
+            var currentSongName = _client.CurrentPlaybackName;
+            var currentSongId = _client.CurrentPlaybackId;
+            var currentSongIsLiked = _client.CheckLikedById(currentSongId);
+            var subtitle = currentSongIsLiked 
+                ? $"Remove '{currentSongName}' from liked songs" 
+                : $"Add '{currentSongName}' to liked songs";
+            return SingleResultInList("Toggle", subtitle, action: _client.ToggleLikeCurrentSong);
         }
 
         private async Task<List<Result>> SearchAllAsync(string param)
