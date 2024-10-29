@@ -89,6 +89,23 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
+        public String CurrentPlaybackId
+        {
+            get
+            {
+                IPlayableItem item = _spotifyClient.Player.GetCurrentPlayback().GetAwaiter().GetResult().Item;
+                if (item is FullTrack track)
+                {
+                    return track.Id;
+                }
+                if (item is FullEpisode episode)
+                {
+                    return episode.Id;
+                }
+                return "Unknown";
+            }
+        }
+
         public async Task<string> GetActiveDeviceNameAsync()
         {
             //Returns null, or active device string
@@ -116,7 +133,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return true;
 
             }
-            catch (APIUnauthorizedException e)
+            catch (APIUnauthorizedException)
             {
                 return false;
             }
@@ -135,7 +152,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return this.profile.Product == "premium";
 
             }
-            catch (APIUnauthorizedException e)
+            catch (APIUnauthorizedException)
             {
                 return false;
             }
@@ -255,6 +272,52 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();
         }
 
+        public bool CheckLikedById(string trackId) {
+            var checkLikeRequest = new LibraryCheckTracksRequest(new List<string> {trackId});
+            return _spotifyClient.Library.CheckTracks(checkLikeRequest).GetAwaiter().GetResult()[0];
+        }
+
+        public void ToggleLikeById(string trackId)
+        {
+            var isLiked = CheckLikedById(trackId);
+
+            if (!isLiked)
+            {
+                LikeById(trackId);
+            }
+            else
+            {
+                UnlikeById(trackId);
+            }
+        }
+
+        public void LikeById(string trackId)
+        {
+            var likeRequest = new LibrarySaveTracksRequest(new List<string> {trackId});
+            _spotifyClient.Library.SaveTracks(likeRequest);
+        }
+
+        public void UnlikeById(string trackId) {
+            var likeRemoveRequest = new LibraryRemoveTracksRequest(new List<string> {trackId});
+            _spotifyClient.Library.RemoveTracks(likeRemoveRequest);
+        }
+
+        public void AddLikeCurrentSong()
+        {
+            var currentSongId = CurrentPlaybackId;
+            LikeById(currentSongId);
+        }
+
+        public void UnlikeCurrentSong() {
+            var currentSongId = CurrentPlaybackId;
+            UnlikeById(currentSongId);
+        }
+    
+        public void ToggleLikeCurrentSong() {
+            var currentSongId = CurrentPlaybackId;
+            ToggleLikeById(currentSongId);
+        }
+
         public bool RefreshTokenAvailable()
         {
             _securityStore = SecurityStore.Load(pluginDirectory);
@@ -316,6 +379,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Scope = new List<string>
                     {
                         UserLibraryRead,
+                        UserLibraryModify,
                         UserReadEmail,
                         UserReadPrivate,
                         UserReadPlaybackPosition,
@@ -323,7 +387,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                         UserReadPlaybackState,
                         UserModifyPlaybackState,
                         AppRemoteControl,
-                        PlaylistReadPrivate
+                        PlaylistReadPrivate,
                     }
                 };
 

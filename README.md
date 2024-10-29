@@ -29,6 +29,9 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 | `` sp device ``                    | Set Active Device                                |
 | `` sp shuffle ``                   | Toggle Shuffle Mode                              |
 | `` sp reconnect ``                 | Force a full reconnection                        |
+| `` sp like ``                      | Add the playing track to liked songs             |
+| `` sp like {track name}``          | Search for a track to add to liked songs         |
+| `` sp unlike ``                    | Remove the playing track from liked songs        |
 
 ### Notice
 - Spotify relies on Web Authentication Calls to Connect to the API remotely - you will need to authorize it to use this plugin
