@@ -52,6 +52,20 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
+        public PlayerSetRepeatRequest.State RepeatStatus
+        {
+            get
+            {
+                return PlaybackContext.RepeatState switch
+                {
+                    "off" => PlayerSetRepeatRequest.State.Off,
+                    "context" => PlayerSetRepeatRequest.State.Context,
+                    "track" => PlayerSetRepeatRequest.State.Track,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+        }
+
         public int CurrentVolume
         {
             get
@@ -104,6 +118,17 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }
                 return "Unknown";
             }
+        }
+
+        public PlayerSetRepeatRequest.State GetNextRepeatAction(PlayerSetRepeatRequest.State currentStatus)
+        {
+            return currentStatus switch
+            {
+                PlayerSetRepeatRequest.State.Off => PlayerSetRepeatRequest.State.Context,
+                PlayerSetRepeatRequest.State.Context => PlayerSetRepeatRequest.State.Track,
+                PlayerSetRepeatRequest.State.Track => PlayerSetRepeatRequest.State.Off,
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
 
         public async Task<string> GetActiveDeviceNameAsync()
@@ -270,6 +295,13 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             var shuffleRequest = new PlayerShuffleRequest(!ShuffleStatus);
             _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();
+        }
+
+        public void ToggleRepeat()
+        {
+            var nextRepeatAction = GetNextRepeatAction(RepeatStatus);
+            var playerSetRepeatRequest = new PlayerSetRepeatRequest(nextRepeatAction);
+            _spotifyClient.Player.SetRepeat(playerSetRepeatRequest).GetAwaiter().GetResult();
         }
 
         public bool CheckLikedById(string trackId) {
@@ -616,3 +648,4 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         }
     }
 }
+
