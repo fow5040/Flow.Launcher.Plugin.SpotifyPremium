@@ -28,6 +28,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 | `` sp volume {level}``             | Set Volume (absolute 1-100 or relative +/- 20)   |
 | `` sp device ``                    | Set Active Device                                |
 | `` sp shuffle ``                   | Toggle Shuffle Mode                              |
+| `` sp repeat ``                   | Cycle Through Repeat Modes                             |
 | `` sp reconnect ``                 | Force a full reconnection                        |
 | `` sp like ``                      | Add the playing track to liked songs             |
 | `` sp like {track name}``          | Search for a track to add to liked songs         |
