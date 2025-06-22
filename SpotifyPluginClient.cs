@@ -360,7 +360,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             _securityStore = SecurityStore.Load(pluginDirectory);
 
-            var server = new EmbedIOAuthServer(new Uri("http://localhost:4002/callback"), 4002);
+            var server = new EmbedIOAuthServer(new Uri("http://127.0.0.1:4002/callback"), 4002);
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
