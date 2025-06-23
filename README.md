@@ -44,7 +44,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
     - If using roaming, your Flow Userdata Directory is: `%APPDATA%\FlowLauncher`
     - If using portable, your Flow Userdata Directory is : `%localappdata%\FlowLauncher\app-<VersionOfYourFlowLauncher>\UserData`
     - To generate a Client ID and Secret, navigate to ``https://developer.spotify.com/dashboard/``, login, and generate your own ID & Key
-    - After generating a key pair, under "edit settings", add `http://localhost:4002/callback` as a Redirect URI
+    - After generating a key pair, under "edit settings", add `http://127.0.0.1:4002/callback` as a Redirect URI
 - This plugin cannot currently search for Podcasts - this is due to a restructure of the Spotify API which enabled support for "FullEpisode", among other things. See the [SpotifyAPI-NET Documentation](https://johnnycrazy.github.io/SpotifyAPI-NET/docs/iplayableitem) for more information.
 - The Spotify queue API currently only supports adding single tracks to queues, not albums, even though the player can add albums, etc.
 - Set Flow Launcher Maximum Results Shown to 12 or higher for best results
