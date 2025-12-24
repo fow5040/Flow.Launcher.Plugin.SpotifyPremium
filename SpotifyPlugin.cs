@@ -66,6 +66,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _terms.Add("vol", SetVolume);
             _terms.Add("volume", SetVolume);
             _terms.Add("shuffle", ToggleShuffle);
+            _terms.Add("repeat", ToggleRepeat);
             _terms.Add("unlike", UnlikeCurrentSong);
 
             //view query count and average query duration
@@ -235,6 +236,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 PlayLast(string.Empty).First(),
                 ToggleMute().First(),
                 ToggleShuffle().First(),
+                ToggleRepeat().First(),
                 SetVolume().First()
             };
         }
@@ -243,6 +245,20 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             var toggleAction = _client.MuteStatus ? "Unmute" : "Mute";
             return SingleResultInList("Toggle Mute", $"{toggleAction}: {_client.CurrentPlaybackName}", action: _client.ToggleMute);
+        }
+
+        private List<Result> ToggleRepeat(string arg = null)
+        {
+            var currentRepeatStatus = _client.RepeatStatus;
+            var nextRepeatStatus = _client.GetNextRepeatAction(currentRepeatStatus);
+            var toggleAction = nextRepeatStatus switch
+            {
+                PlayerSetRepeatRequest.State.Off => "Repeat Off",
+                PlayerSetRepeatRequest.State.Track => "Repeat Current Track",
+                PlayerSetRepeatRequest.State.Context => "Repeat Current Playlist",
+                _ => "Unknown repeat status"
+            };
+            return SingleResultInList("Toggle Repeat", $"{toggleAction}: {_client.CurrentPlaybackName}", action: _client.ToggleRepeat);
         }
 
         private struct SetVolAction {
@@ -641,3 +657,4 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private void RefreshDisplayInfo() => _context.API.ChangeQuery(currentQuery, true);
     }
 }
+

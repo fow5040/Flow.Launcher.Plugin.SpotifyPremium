@@ -28,6 +28,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 | `` sp volume {level} ``            | Set Volume (absolute 1-100 or relative +/- 20)   |
 | `` sp device ``                    | Set Active Device                                |
 | `` sp shuffle ``                   | Toggle Shuffle Mode                              |
+| `` sp repeat ``                    | Cycle Through Repeat Modes                       |
 | `` sp reconnect ``                 | Force a full reconnection                        |
 | `` sp like ``                      | Add the playing track to liked songs             |
 | `` sp like {track name} ``         | Search for a track to add to liked songs         |
@@ -38,7 +39,7 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 - **You _NEED_ a client secret and client ID to use this plugin!** This app currently hardcodes my personal Client ID and Client Secret to interact with Spotify. If current app usage hits any API limits, naturally you will need to switch out the current Client ID and Secret.
 - To use a custom ID/Secret, create a file called security.store in _**yourFlowUserDataDirectory**\Plugins\SpotifyPremium-**ver**\security.store_ with the following format:
 ```
-{"ClientId":"yourClientSecret", "ClientSecret":"yourClientSecret"}
+{"ClientId":"yourClientID", "ClientSecret":"yourClientSecret"}
 ```
 
 - If using roaming, your Flow Userdata Directory is: `%APPDATA%\FlowLauncher`
@@ -68,3 +69,4 @@ This plugin requires the use of the Spotify Web API, which is only accessible th
 - Configurable default search type
 - Add configuration menu
     - Would really like a config menu for people to put their own app ID/Secrets
+

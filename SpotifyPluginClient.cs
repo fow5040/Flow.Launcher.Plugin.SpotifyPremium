@@ -52,6 +52,20 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
+        public PlayerSetRepeatRequest.State RepeatStatus
+        {
+            get
+            {
+                return PlaybackContext.RepeatState switch
+                {
+                    "off" => PlayerSetRepeatRequest.State.Off,
+                    "context" => PlayerSetRepeatRequest.State.Context,
+                    "track" => PlayerSetRepeatRequest.State.Track,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+        }
+
         public int CurrentVolume
         {
             get
@@ -104,6 +118,17 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }
                 return "Unknown";
             }
+        }
+
+        public PlayerSetRepeatRequest.State GetNextRepeatAction(PlayerSetRepeatRequest.State currentStatus)
+        {
+            return currentStatus switch
+            {
+                PlayerSetRepeatRequest.State.Off => PlayerSetRepeatRequest.State.Context,
+                PlayerSetRepeatRequest.State.Context => PlayerSetRepeatRequest.State.Track,
+                PlayerSetRepeatRequest.State.Track => PlayerSetRepeatRequest.State.Off,
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
 
         public async Task<string> GetActiveDeviceNameAsync()
@@ -272,6 +297,13 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             _spotifyClient.Player.SetShuffle(shuffleRequest).GetAwaiter().GetResult();
         }
 
+        public void ToggleRepeat()
+        {
+            var nextRepeatAction = GetNextRepeatAction(RepeatStatus);
+            var playerSetRepeatRequest = new PlayerSetRepeatRequest(nextRepeatAction);
+            _spotifyClient.Player.SetRepeat(playerSetRepeatRequest).GetAwaiter().GetResult();
+        }
+
         public bool CheckLikedById(string trackId) {
             var checkLikeRequest = new LibraryCheckTracksRequest(new List<string> {trackId});
             return _spotifyClient.Library.CheckTracks(checkLikeRequest).GetAwaiter().GetResult()[0];
@@ -328,7 +360,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             _securityStore = SecurityStore.Load(pluginDirectory);
 
-            var server = new EmbedIOAuthServer(new Uri("http://localhost:4002/callback"), 4002);
+            var server = new EmbedIOAuthServer(new Uri("http://127.0.0.1:4002/callback"), 4002);
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
@@ -616,3 +648,4 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         }
     }
 }
+
