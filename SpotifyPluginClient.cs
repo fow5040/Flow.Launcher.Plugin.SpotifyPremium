@@ -125,7 +125,15 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             return activeDevice?.Name;
         }
 
-        public async Task<string> GetUserIdAsync() => (await _spotifyClient.UserProfile.Current()).Id;
+        public async Task<string> GetUserIdAsync()
+        {
+            if (_spotifyClient == null)
+            {
+                throw new InvalidOperationException("Spotify client is not connected. Complete authorization first.");
+            }
+
+            return (await _spotifyClient.UserProfile.Current()).Id;
+        }
 
         private string CacheFolder { get; }
 
@@ -344,20 +352,23 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                                     .WithJSONSerializer(new JsonSerializerDecorator(_api));
                     _spotifyClient = new SpotifyClient(config);
                 }
+
+                return;
             }
-            else
+
+            await server.Start();
+            var authCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            server.AuthorizationCodeReceived += async (_, response) =>
             {
-                await server.Start();
-
-                server.AuthorizationCodeReceived += async (_, response) =>
+                try
                 {
-                    await server.Stop();
-
                     var token = await new OAuthClient().RequestToken(
                         new AuthorizationCodeTokenRequest(_securityStore.ClientId,
                             _securityStore.ClientSecret,
                             response.Code,
                             server.BaseUri));
+
                     lock (_lock)
                     {
                         _securityStore.RefreshToken = token.RefreshToken;
@@ -367,41 +378,55 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                                     .WithJSONSerializer(new JsonSerializerDecorator(_api));
                         _spotifyClient = new SpotifyClient(config);
                     }
-                };
 
-                server.ErrorReceived += async (sender, error, state) =>
+                    authCompletion.TrySetResult(true);
+                }
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Aborting authorization, error received: {error}");
+                    authCompletion.TrySetException(ex);
+                }
+                finally
+                {
                     await server.Stop();
-                };
-
-                var request = new LoginRequest(server.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
-                {
-                    Scope = new List<string>
-                    {
-                        UserLibraryRead,
-                        UserLibraryModify,
-                        UserReadEmail,
-                        UserReadPrivate,
-                        UserReadPlaybackPosition,
-                        UserReadCurrentlyPlaying,
-                        UserReadPlaybackState,
-                        UserModifyPlaybackState,
-                        AppRemoteControl,
-                        PlaylistReadPrivate,
-                    }
-                };
-
-                var uri = request.ToUri();
-                try
-                {
-                    BrowserUtil.Open(uri);
                 }
-                catch (Exception)
+            };
+
+            server.ErrorReceived += async (_, error, state) =>
+            {
+                _api.LogException(nameof(SpotifyPluginClient), $"Aborting authorization, error received: {error}", null);
+                authCompletion.TrySetException(new InvalidOperationException($"Spotify authorization failed: {error}"));
+                await server.Stop();
+            };
+
+            var request = new LoginRequest(server.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
+            {
+                Scope = new List<string>
                 {
-                    Console.WriteLine("Unable to open URL, manually open: {0}", uri);
+                    UserLibraryRead,
+                    UserLibraryModify,
+                    UserReadEmail,
+                    UserReadPrivate,
+                    UserReadPlaybackPosition,
+                    UserReadCurrentlyPlaying,
+                    UserReadPlaybackState,
+                    UserModifyPlaybackState,
+                    AppRemoteControl,
+                    PlaylistReadPrivate,
                 }
+            };
+
+            var uri = request.ToUri();
+            try
+            {
+                BrowserUtil.Open(uri);
             }
+            catch (Exception ex)
+            {
+                _api.LogException(nameof(SpotifyPluginClient), $"Unable to open URL, manually open: {uri}", ex);
+                authCompletion.TrySetException(new InvalidOperationException("Unable to open browser for Spotify authorization.", ex));
+            }
+
+            await authCompletion.Task;
         }
 
         public async Task<List<FullArtist>> GetArtists(string s)
