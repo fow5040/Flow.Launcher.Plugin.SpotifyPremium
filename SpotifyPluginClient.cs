@@ -444,8 +444,6 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
 
         public async Task<List<SpotifySearchResult>> SearchAll(string s)
         {
-        {
-        {
             var q = $"{s.Replace(' ', '+')}*";
             var searchRequest = new SearchRequest(SearchRequest.Types.All, q) { Limit = 3 };
             var searchResponse = await _spotifyClient.Search.Item(searchRequest);
