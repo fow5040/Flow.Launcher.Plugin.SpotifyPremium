@@ -20,6 +20,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private readonly object _lock = new object();
         private int mLastVolume = 10;
         private SecurityStore _securityStore;
+        private EmbedIOAuthServer _authServer;
+        private TaskCompletionSource<bool> _authCompletion;
+        private Uri _authLoginUri;
         private string pluginDirectory;
         private const string UnknownIcon = "icon.png";
         public PrivateUser profile;
@@ -337,7 +340,6 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         public async Task ConnectWebClient(bool keepRefreshToken = true)
         {
             _securityStore = SecurityStore.Load(pluginDirectory);
-            var server = new EmbedIOAuthServer(new Uri("http://127.0.0.1:4002/callback"), 4002);
 
             if (_securityStore.HasRefreshToken && keepRefreshToken)
             {
@@ -356,10 +358,21 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return;
             }
 
-            await server.Start();
-            var authCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (_authCompletion != null && !_authCompletion.Task.IsCompleted)
+            {
+                if (_authLoginUri != null)
+                {
+                    BrowserUtil.Open(_authLoginUri);
+                }
 
-            server.AuthorizationCodeReceived += async (_, response) =>
+                return;
+            }
+
+            _authServer = new EmbedIOAuthServer(new Uri("http://127.0.0.1:4002/callback"), 4002);
+            await _authServer.Start();
+            _authCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            _authServer.AuthorizationCodeReceived += async (_, response) =>
             {
                 try
                 {
@@ -367,7 +380,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                         new AuthorizationCodeTokenRequest(_securityStore.ClientId,
                             _securityStore.ClientSecret,
                             response.Code,
-                            server.BaseUri));
+                            _authServer.BaseUri));
 
                     lock (_lock)
                     {
@@ -379,26 +392,30 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                         _spotifyClient = new SpotifyClient(config);
                     }
 
-                    authCompletion.TrySetResult(true);
+                    _authCompletion.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
-                    authCompletion.TrySetException(ex);
+                    _authCompletion.TrySetException(ex);
                 }
                 finally
                 {
-                    await server.Stop();
+                    await _authServer.Stop();
+                    _authServer = null;
+                    _authLoginUri = null;
                 }
             };
 
-            server.ErrorReceived += async (_, error, state) =>
+            _authServer.ErrorReceived += async (_, error, state) =>
             {
                 _api.LogException(nameof(SpotifyPluginClient), $"Aborting authorization, error received: {error}", null);
-                authCompletion.TrySetException(new InvalidOperationException($"Spotify authorization failed: {error}"));
-                await server.Stop();
+                _authCompletion.TrySetException(new InvalidOperationException($"Spotify authorization failed: {error}"));
+                await _authServer.Stop();
+                _authServer = null;
+                _authLoginUri = null;
             };
 
-            var request = new LoginRequest(server.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
+            var request = new LoginRequest(_authServer.BaseUri, _securityStore.ClientId, LoginRequest.ResponseType.Code)
             {
                 Scope = new List<string>
                 {
@@ -415,18 +432,16 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 }
             };
 
-            var uri = request.ToUri();
+            _authLoginUri = request.ToUri();
             try
             {
-                BrowserUtil.Open(uri);
+                BrowserUtil.Open(_authLoginUri);
             }
             catch (Exception ex)
             {
-                _api.LogException(nameof(SpotifyPluginClient), $"Unable to open URL, manually open: {uri}", ex);
-                authCompletion.TrySetException(new InvalidOperationException("Unable to open browser for Spotify authorization.", ex));
+                _api.LogException(nameof(SpotifyPluginClient), $"Unable to open URL, manually open: {_authLoginUri}", ex);
+                _authCompletion.TrySetException(new InvalidOperationException("Unable to open browser for Spotify authorization.", ex));
             }
-
-            await authCompletion.Task;
         }
 
         public async Task<List<FullArtist>> GetArtists(string s)

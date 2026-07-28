@@ -533,10 +533,23 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 authSemaphore.Release();
                 return;
             }
+
             await authSemaphore.WaitAsync();
-            await _client.ConnectWebClient(keepRefreshToken);
-            currentUserId = await _client.GetUserIdAsync();
-            authSemaphore.Release();
+            try
+            {
+                await _client.ConnectWebClient(keepRefreshToken);
+
+                if (!_client.ApiConnected)
+                {
+                    return;
+                }
+
+                currentUserId = await _client.GetUserIdAsync();
+            }
+            finally
+            {
+                authSemaphore.Release();
+            }
         }
 
         private Action ReconnectAction(SpotifyPluginClient client, bool keepRefreshToken = true)
