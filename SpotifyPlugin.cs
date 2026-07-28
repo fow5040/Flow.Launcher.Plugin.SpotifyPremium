@@ -69,7 +69,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 Task.FromResult(SingleResultInList(
                     "Reconnect",
                     "Force a reconnection and remove the refresh token",
-                    action: ReconnectAction(_client, false))));
+                    action: ReconnectAction(false))));
 
             return Task.CompletedTask;
         }
@@ -77,24 +77,24 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         private async Task<List<Result>> Play(string arg)
         {
             var name = await _client.GetCurrentPlaybackNameAsync();
-            return SingleResultInList("Play", $"Resume: {name}", action: async () => await _client.PlayAsync());
+            return SingleResultInList("Play", $"Resume: {name}", asyncAction: () => _client.PlayAsync());
         }
 
         private async Task<List<Result>> Pause(string arg = null)
         {
             var name = await _client.GetCurrentPlaybackNameAsync();
-            return SingleResultInList("Pause", $"Pause: {name}", action: async () => await _client.PauseAsync());
+            return SingleResultInList("Pause", $"Pause: {name}", asyncAction: () => _client.PauseAsync());
         }
 
         private async Task<List<Result>> PlayNext(string arg)
         {
             var name = await _client.GetCurrentPlaybackNameAsync();
-            return SingleResultInList("Next", $"Skip: {name}", action: async () => await _client.SkipAsync());
+            return SingleResultInList("Next", $"Skip: {name}", asyncAction: () => _client.SkipAsync());
         }
 
         private async Task<List<Result>> PlayLast(string arg)
         {
-            return SingleResultInList("Last", "Skip Backwards", action: async () => await _client.SkipBackAsync());
+            return SingleResultInList("Last", "Skip Backwards", asyncAction: () => _client.SkipBackAsync());
         }
 
         public async Task<List<Result>> QueryAsync(Query query, CancellationToken token)
@@ -105,7 +105,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             {
                 return SingleResultInList(
                     "Require Authentication", "Select to authorize",
-                    action: ReconnectAction(_client),
+                    action: ReconnectAction(),
                     hideAfterAction: false);
             }
 
@@ -119,7 +119,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return SingleResultInList(
                     "Current Spotify account is not premium!",
                     "Switch to premium account, then select this to use new login",
-                    action: ReconnectAction(_client, false),
+                    action: ReconnectAction(false),
                     hideAfterAction: false);
             }
 
@@ -225,7 +225,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             var muteStatus = await _client.GetMuteStatusAsync();
             var toggleAction = muteStatus ? "Unmute" : "Mute";
             var name = await _client.GetCurrentPlaybackNameAsync();
-            return SingleResultInList("Toggle Mute", $"{toggleAction}: {name}", action: async () => await _client.ToggleMuteAsync());
+            return SingleResultInList("Toggle Mute", $"{toggleAction}: {name}", asyncAction: () => _client.ToggleMuteAsync());
         }
 
         private async Task<List<Result>> ToggleRepeat(string arg = null)
@@ -240,7 +240,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 _ => "Unknown repeat status"
             };
             var name = await _client.GetCurrentPlaybackNameAsync();
-            return SingleResultInList("Toggle Repeat", $"{toggleAction}: {name}", action: async () => await _client.ToggleRepeatAsync());
+            return SingleResultInList("Toggle Repeat", $"{toggleAction}: {name}", asyncAction: () => _client.ToggleRepeatAsync());
         }
 
         private struct SetVolAction
@@ -311,7 +311,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 return SingleResultInList(
                     $"Set Volume to {volAction.target}",
                     $"Current Volume: {cachedVolume}",
-                    action: async () => { await _client.SetVolumeAsync(volAction.target); });
+                    asyncAction: () => _client.SetVolumeAsync(volAction.target));
             }
 
             return SingleResultInList($"Volume", $"Current Volume: {cachedVolume}", action: null);
@@ -321,19 +321,19 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             var shuffleStatus = await _client.GetShuffleStatusAsync();
             var toggleAction = shuffleStatus ? "Off" : "On";
-            return SingleResultInList("Toggle Shuffle", $"Turn Shuffle {toggleAction}", action: async () => await _client.ToggleShuffleAsync());
+            return SingleResultInList("Toggle Shuffle", $"Turn Shuffle {toggleAction}", asyncAction: () => _client.ToggleShuffleAsync());
         }
 
         private async Task<List<Result>> AddLikeCurrentSong(string arg = null)
         {
             var currentSong = await _client.GetCurrentPlaybackNameAsync();
-            return SingleResultInList("Like", $"Add '{currentSong}' to liked songs", action: async () => await _client.AddLikeCurrentSongAsync());
+            return SingleResultInList("Like", $"Add '{currentSong}' to liked songs", asyncAction: () => _client.AddLikeCurrentSongAsync());
         }
 
         private async Task<List<Result>> UnlikeCurrentSong(string arg = null)
         {
             var currentSong = await _client.GetCurrentPlaybackNameAsync();
-            return SingleResultInList("Remove", $"Remove '{currentSong}' from liked songs", action: async () => await _client.UnlikeCurrentSongAsync());
+            return SingleResultInList("Remove", $"Remove '{currentSong}' from liked songs", asyncAction: () => _client.UnlikeCurrentSongAsync());
         }
 
         private async Task<List<Result>> SearchAllAsync(string param)
@@ -351,11 +351,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 Title = x.Title,
                 SubTitle = x.Subtitle,
                 IcoPath = await _client.GetArtworkAsync(x),
-                Action = _ =>
-                {
-                    Task.Run(async () => await _client.PlayAsync(x.Uri));
-                    return true;
-                }
+                Action = FireAndForgetAction(() => _client.PlayAsync(x.Uri))
             }).ToArray();
 
             await Task.WhenAll(results);
@@ -378,14 +374,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 Title = x.Name,
                 SubTitle = (shouldQueue ? "Queue track by " : "") + "Artist: " + string.Join(", ", x.Artists.Select(a => a.Name)),
                 IcoPath = await _client.GetArtworkAsync(x),
-                Action = _ =>
-                {
-                    if (shouldQueue)
-                        Task.Run(async () => await _client.EnqueueAsync(x.Uri));
-                    else
-                        Task.Run(async () => await _client.PlayAsync(x.Uri));
-                    return true;
-                }
+                Action = FireAndForgetAction(() => shouldQueue ? _client.EnqueueAsync(x.Uri) : _client.PlayAsync(x.Uri))
             }).ToArray();
 
             await Task.WhenAll(results);
@@ -407,11 +396,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 Title = x.Name,
                 SubTitle = "by " + string.Join(", ", x.Artists.Select(a => a.Name)),
                 IcoPath = await _client.GetArtworkAsync(x),
-                Action = _ =>
-                {
-                    Task.Run(async () => await _client.PlayAsync(x.Uri));
-                    return true;
-                }
+                Action = FireAndForgetAction(() => _client.PlayAsync(x.Uri))
             }).ToArray();
 
             await Task.WhenAll(results);
@@ -433,11 +418,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 Title = x.Name,
                 SubTitle = $"Popularity: {x.Popularity}%",
                 IcoPath = await _client.GetArtworkAsync(x),
-                Action = _ =>
-                {
-                    Task.Run(async () => await _client.PlayAsync(x.Uri));
-                    return true;
-                }
+                Action = FireAndForgetAction(() => _client.PlayAsync(x.Uri))
             }).ToArray();
 
             await Task.WhenAll(results);
@@ -459,11 +440,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 Title = x.Name,
                 SubTitle = x.Type,
                 IcoPath = await _client.GetArtworkAsync(x),
-                Action = _ =>
-                {
-                    Task.Run(async () => await _client.PlayAsync(x.Uri));
-                    return true;
-                }
+                Action = FireAndForgetAction(() => _client.PlayAsync(x.Uri))
             }).ToArray();
 
             await Task.WhenAll(results);
@@ -482,7 +459,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                 var subtitle = currentSongIsLiked
                     ? $"Remove '{currentSongName}' from liked songs"
                     : $"Add '{currentSongName}' to liked songs";
-                return SingleResultInList("Like", subtitle, action: async () => await _client.ToggleLikeCurrentSongAsync());
+                return SingleResultInList("Like", subtitle, asyncAction: () => _client.ToggleLikeCurrentSongAsync());
             }
 
             var searchResults = await _client.GetTracks(param);
@@ -493,11 +470,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     ? $"Remove '{x.Name}' by {string.Join(", ", x.Artists.Select(a => a.Name))} from liked songs"
                     : $"Add '{x.Name}' by {string.Join(", ", x.Artists.Select(a => a.Name))} to liked songs",
                 IcoPath = await _client.GetArtworkAsync(x),
-                Action = _ =>
-                {
-                    Task.Run(async () => await _client.ToggleLikeByIdAsync(x.Id));
-                    return true;
-                }
+                Action = FireAndForgetAction(() => _client.ToggleLikeByIdAsync(x.Id))
             }).ToArray();
 
             await Task.WhenAll(results);
@@ -508,18 +481,14 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
         {
             var allDevices = await _client.GetDevicesAsync();
             if (allDevices.Count == 0)
-                return SingleResultInList("No devices found on Spotify.", "Reconnect to client", action: () => { Task.Run(async () => await ReconnectAsync()); });
+                return SingleResultInList("No devices found on Spotify.", "Reconnect to client", action: ReconnectAction());
 
             var results = allDevices.Where(device => !device.IsRestricted).Select(x => new Result
             {
                 Title = $"{x.Type}  {x.Name}",
                 SubTitle = x.IsActive ? "Active Device" : "Inactive",
                 IcoPath = SpotifyIcon,
-                Action = (a) =>
-                {
-                    Task.Run(async () => await _client.SetDevice(x.Id));
-                    return true;
-                }
+                Action = FireAndForgetAction(() => _client.SetDevice(x.Id))
             }).ToList();
 
             return results.Any() ? results : NothingFoundResult;
@@ -552,7 +521,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
         }
 
-        private Action ReconnectAction(SpotifyPluginClient client, bool keepRefreshToken = true)
+        private Action ReconnectAction(bool keepRefreshToken = true)
         {
             return () =>
             {
@@ -571,11 +540,36 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             };
         }
 
+        private Func<ActionContext, bool> FireAndForgetAction(Func<Task> asyncAction, bool hideAfterAction = true, bool requery = true)
+        {
+            return _ =>
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await asyncAction();
+                    }
+                    catch (Exception ex)
+                    {
+                        _context.API.LogException(nameof(SpotifyPlugin), "Failed to execute async action", ex);
+                    }
+                    finally
+                    {
+                        if (requery)
+                            RefreshDisplayInfo();
+                    }
+                });
+
+                return hideAfterAction;
+            };
+        }
+
         private List<Result> AuthenticateResult =>
             SingleResultInList(
                 "Authentication required to search the Spotify library",
                 "Click this to authenticate",
-                action: ReconnectAction(_client));
+                action: ReconnectAction());
 
         private List<Result> NothingFoundResult =>
             SingleResultInList("No results found on Spotify.", "Please try refining your search", action: null);
@@ -585,6 +579,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             string subtitle = "",
             string icoPath = SpotifyIcon,
             Action action = default,
+            Func<Task> asyncAction = default,
             bool hideAfterAction = true,
             bool requery = true)
             =>
@@ -595,15 +590,17 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                     Title = title,
                     SubTitle = subtitle,
                     IcoPath = icoPath,
-                    Action = _ =>
-                    {
-                        action?.Invoke();
+                    Action = action is null
+                        ? asyncAction is null ? null : FireAndForgetAction(asyncAction, hideAfterAction, requery)
+                        : _ =>
+                        {
+                            action();
 
-                        if (requery)
-                            RefreshDisplayInfo();
+                            if (requery)
+                                RefreshDisplayInfo();
 
-                        return hideAfterAction;
-                    }
+                            return hideAfterAction;
+                        }
                 }
             };
 
