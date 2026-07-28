@@ -550,9 +550,9 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
                         await ReconnectAsync(keepRefreshToken);
                         _context.API.ChangeQuery(_context.CurrentPluginMetadata.ActionKeywords[0] + " ", true);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        Console.WriteLine("Failed to write client ID");
+                        _context.API.LogException(nameof(SpotifyPlugin), "Failed to write client ID", ex);
                     }
                 });
             };

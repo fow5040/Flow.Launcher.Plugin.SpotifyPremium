@@ -198,7 +198,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                _api.LogException(nameof(SpotifyPluginClient), "PlayAsync failed to resume playback.", e);
             }
         }
 
@@ -211,7 +211,7 @@ namespace Flow.Launcher.Plugin.SpotifyPremium
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                _api.LogException(nameof(SpotifyPluginClient), "EnqueueAsync failed to add item to queue.", e);
             }
         }
 
